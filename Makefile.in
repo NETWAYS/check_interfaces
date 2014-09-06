@@ -1,0 +1,39 @@
+CC=@CC@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+INSTALL=@INSTALL@
+DESTDIR=@libexecdir@
+OBJS=snmp_bulkget.o utils.o
+TARGET=check_interfaces
+
+
+CPPFLAGS=@CPPFLAGS@
+LDFLAGS=@LDFLAGS@
+CFLAGS=@CFLAGS@ @DEFS@
+# shared library flags (assumes gcc)
+# DLFLAGS=-fPIC -shared
+BUILDLIBS=@SNMP_LIBS@ @LIBS@
+
+.PHONY: debug clean all install
+all: build strip
+build: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) -o $(TARGET) $(OBJS) $(LDFLAGS) $(BUILDLIBS)
+
+strip:
+	strip $(TARGET)
+
+debug: CFLAGS += -DDEBUG -g -O0
+debug: LDFLAGS += -g -O0
+debug: build
+
+
+clean:
+	rm $(OBJS) $(TARGET)
+
+
+install: all
+	$(INSTALL) -t $(DESTDIR) $(TARGET)
+
+

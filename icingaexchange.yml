@@ -1,0 +1,10 @@
+name: check_interfaces
+description: "file:///README.md"
+url: "https://www.netways.org/projects/plugins"
+tags: ~
+vendor: NETWAYS
+target: Operating System
+type: Plugin
+license: gplv2
+releases: 
+

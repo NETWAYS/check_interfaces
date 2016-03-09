@@ -98,30 +98,30 @@ unsigned int lastcheck = 0;
 unsigned long global_timeout = DFLT_TIMEOUT;
 
 
-int 
+int
 main(int argc, char *argv[])
 {
     netsnmp_session session, *ss;
     netsnmp_pdu    *pdu;
     netsnmp_pdu *response;
 
-
     netsnmp_variable_list *vars;
-    int             status, status2;
-    int             count = 0; /* used for: the number of interfaces we receive, the number of regex matches */
-    int             ifNumber = 0;
-    int             i, j, k;
+    int     status, status2;
+    int     count = 0; /* used for: the number of interfaces we receive, the number of regex matches */
+    int     ifNumber = 0;
+    int     i, j, k;
     int     errorflag = 0;
     int     warnflag = 0;
     int     lastifflag = 0;
     int     crit_on_down_flag = 1;
     int     get_aliases_flag = 0;
     int     match_aliases_flag = 0;
+    int     get_names_flag = 0;
     int     err_tolerance = 50;
     int     coll_tolerance = -1;
     u64     speed = 0;
     int     bw = 0;
-	size_t	size,size2;
+    size_t  size,size2;
 
     struct ifStruct interfaces[MAX_INTERFACES]; /* current interface data */
     struct ifStruct oldperfdata[MAX_INTERFACES]; /* previous check interface data */
@@ -193,7 +193,7 @@ main(int argc, char *argv[])
     static struct option longopts[] =
     {
         {"aliases",     no_argument,        NULL,   'a'},
-        {"match-aliases",     no_argument,        NULL,   'A'},
+        {"match-aliases",     no_argument,  NULL,   'A'},
         {"bandwidth",   required_argument,  NULL,   'b'},
         {"community",   required_argument,  NULL,   'c'},
         {"down-is-ok",  no_argument,        NULL,   'd'},
@@ -211,7 +211,8 @@ main(int argc, char *argv[])
         {"perfdata",    required_argument,  NULL,   'p'},
         {"prefix",      required_argument,  NULL,   'P'},
         {"regex",       required_argument,  NULL,   'r'},
-        {"exclude-regex",       required_argument,  NULL,   'R'},
+        {"exclude-regex",    required_argument,    NULL,    'R'},
+        {"if-names",    no_argument,        NULL,   'N'},
         {"speed",       required_argument,  NULL,   's'},
         {"lastcheck",   required_argument,  NULL,   't'},
         {"user",        required_argument,  NULL,   'u'},
@@ -222,8 +223,8 @@ main(int argc, char *argv[])
         {NULL,          0,                  NULL,   0}
     };
 
-    
-    while ((opt = getopt_long(argc, argv, "aAb:c:de:f:h:i:j:J:k:K:m:p:P:r:R:s:t:u:x:?", longopts, NULL)) != -1)
+
+    while ((opt = getopt_long(argc, argv, "aAb:c:de:f:h:i:j:J:k:K:m:Np:P:r:R:s:t:u:x:?", longopts, NULL)) != -1)
     {
         switch(opt)
         {
@@ -279,6 +280,9 @@ main(int argc, char *argv[])
                         break;
                     }
                 }
+                break;
+            case 'N':
+                get_names_flag = 1;
                 break;
             case 'p':
                 oldperfdatap = optarg;
@@ -570,9 +574,6 @@ main(int argc, char *argv[])
 #endif
             }
 
-
-
-
         } else {
             /*
              * FAILURE: print what went wrong!
@@ -704,9 +705,6 @@ main(int argc, char *argv[])
 					lastifflag++;
 				}
 
-
-
-
 			} else {
 				/*
 				 * FAILURE: print what went wrong!
@@ -739,46 +737,6 @@ main(int argc, char *argv[])
 		}
 	}
 
-    if (list) {
-        /*
-         * a regex was given so we will go through our array
-         * and try and match it with what we received
-         *
-         * count is the number of matches
-         */
-
-        count = 0;
-        for (i=0; i < ifNumber; i++)
-        {
-            status = !(regexec(&re, interfaces[i].descr, (size_t) 0, NULL, 0)) || !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0));
-			status2 = 0;
-			if (status && exclude_list)
-					status2 = !(regexec(&exclude_re, interfaces[i].descr, (size_t) 0, NULL, 0)) || !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0));
-            if (status && !status2) {
-				count++;
-#ifdef DEBUG
-				fprintf(stderr, "Interface %d (%s) matched\n", interfaces[i].index, interfaces[i].descr);
-#endif
-            } else {
-                interfaces[i].ignore = 1;
-			}
-        }
-        regfree(&re);
-
-	if (exclude_list)
-		regfree(&exclude_re);
-
-        if (count) {
-#ifdef DEBUG
-            fprintf(stderr, "- %d interface%s found\n", count, (count==1)?"":"s");
-#endif
-        } else {
-            printf("- no interfaces matched regex");
-            exit (0);
-        }
-
-    }
-     
 
     /* now retrieve the interface values in 2 GET requests
      * N.B. if the interfaces are continuous we could try
@@ -807,7 +765,6 @@ main(int argc, char *argv[])
                             break;
                         }
                     }
-
 
                     switch(k) /* the offset into oid_vals */
                     {
@@ -938,6 +895,12 @@ main(int argc, char *argv[])
                                 MEMCPY(interfaces[j].alias, vars->val.string, vars->val_len);
                             }
                             break;
+                        case 7: /* name */
+                            if (vars->type == ASN_OCTET_STR)
+                            {
+                                MEMCPY(interfaces[j].name, vars->val.string, vars->val_len);
+                            }
+                            break;
                     }
 
                 }
@@ -952,6 +915,58 @@ main(int argc, char *argv[])
 
         }
     }
+
+    if (list) {
+        /*
+         * a regex was given so we will go through our array
+         * and try and match it with what we received
+         *
+         * count is the number of matches
+         */
+
+        count = 0;
+        for (i=0; i < ifNumber; i++)
+        {
+			/* When --if-name is set ignore descr in favor of name, else use old behaviour */
+			if (get_names_flag)
+				status =  !regexec(&re, interfaces[i].name, (size_t) 0, NULL, 0) ||
+					 	  (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+			else
+				status =  !regexec(&re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
+						  (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+			status2 = 0;
+			if (status && exclude_list)
+				if (get_names_flag)
+					status2 = !regexec(&exclude_re, interfaces[i].name, (size_t) 0, NULL, 0) ||
+						      (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+				else
+					status2 = !regexec(&exclude_re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
+							  (get_aliases_flag && !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+            if (status && !status2) {
+				count++;
+#ifdef DEBUG
+				fprintf(stderr, "Interface %d (%s) matched\n", interfaces[i].index, interfaces[i].descr);
+#endif
+            } else {
+                interfaces[i].ignore = 1;
+			}
+        }
+        regfree(&re);
+
+	if (exclude_list)
+		regfree(&exclude_re);
+
+        if (count) {
+#ifdef DEBUG
+            fprintf(stderr, "- %d interface%s found\n", count, (count==1)?"":"s");
+#endif
+        } else {
+            printf("- no interfaces matched regex");
+            exit (0);
+        }
+
+    }
+     
 
     /* let the user know about interfaces that are down (and subsequently ignored) */
     if (ignore_count)
@@ -996,21 +1011,30 @@ main(int argc, char *argv[])
                     addstr(&perf, "[CRITICAL] ");
                     errorflag++;
                     /* show the alias if configured */
-                    if (get_aliases_flag && strlen(interfaces[i].alias) && strcmp(interfaces[i].alias, interfaces[i].descr))
-                    {
-                        addstr(&out, ", %s (%s) down", interfaces[i].descr, interfaces[i].alias);
-                    } else {
-                        addstr(&out, ", %s down", interfaces[i].descr);
-                    }
+                    if (get_names_flag && strlen(interfaces[i].name)) {
+                        addstr(&out, ", %s", interfaces[i].name);
+                        addstr(&perf, "%s is down", interfaces[i].name);
+					} else {
+                        addstr(&out, ", %s", interfaces[i].descr);
+                        addstr(&perf, "%s is down", interfaces[i].descr);
+					}
+                    if (get_aliases_flag && strlen(interfaces[i].alias))
+                        addstr(&out, " (%s) down", interfaces[i].alias);
+                    else
+                        addstr(&out, " down");
                 } else {
                     addstr(&perf, "[OK] ");
-                }
-                /* show the alias if configured */
-                if (get_aliases_flag && strlen(interfaces[i].alias) && strcmp(interfaces[i].alias, interfaces[i].descr))
-                {
-                    addstr(&perf, "%s (%s) is down", interfaces[i].descr, interfaces[i].alias);
-                } else {
-                    addstr(&perf, "%s is down", interfaces[i].descr);
+                    if (get_names_flag && strlen(interfaces[i].name)) {
+                        addstr(&out, ", %s", interfaces[i].name);
+                        addstr(&perf, "%s is up", interfaces[i].name);
+					} else {
+                        addstr(&out, ", %s", interfaces[i].descr);
+                        addstr(&perf, "%s is up", interfaces[i].descr);
+					}
+                    if (get_aliases_flag && strlen(interfaces[i].alias))
+                        addstr(&out, " (%s) up", interfaces[i].alias);
+                    else
+                        addstr(&out, " up");
                 }
             }
 
@@ -1022,13 +1046,15 @@ main(int argc, char *argv[])
             {
                 if (oldperfdatap)
                 {
-                    /* show the alias if configured */
-                    if (get_aliases_flag && strlen(interfaces[i].alias) && strcmp(interfaces[i].alias, interfaces[i].descr))
-                    {
-                        addstr(&perf, "[WARNING] %s (%s) has", interfaces[i].descr, interfaces[i].alias);
-                    } else {
-                        addstr(&perf, "[WARNING] %s has", interfaces[i].descr);
-                    }
+                    if (get_names_flag && strlen(interfaces[i].name)) {
+                        addstr(&out, "[WARNING] %s", interfaces[i].name);
+					} else {
+                        addstr(&out, "[WARNING] %s", interfaces[i].descr);
+					}
+                    if (get_aliases_flag && strlen(interfaces[i].alias))
+                        addstr(&out, " (%s) has", interfaces[i].alias);
+                    else
+                        addstr(&out, " has");
 
                     /* if we are not in cisco mode simply use "errors" */
 
@@ -1046,10 +1072,13 @@ main(int argc, char *argv[])
                          }
 
                     }
-                    
-                    addstr(&out, ", %s has %lu errors", interfaces[i].descr,
-                        (interfaces[i].inErrors + interfaces[i].outErrors - oldperfdata[i].inErrors - oldperfdata[i].outErrors)
-                    );
+                    if (get_names_flag && strlen(interfaces[i].name)) {
+						addstr(&out, ", %s has %lu errors", interfaces[i].name,
+							(interfaces[i].inErrors + interfaces[i].outErrors - oldperfdata[i].inErrors - oldperfdata[i].outErrors));
+					} else {
+						addstr(&out, ", %s has %lu errors", interfaces[i].descr,
+							(interfaces[i].inErrors + interfaces[i].outErrors - oldperfdata[i].inErrors - oldperfdata[i].outErrors));
+					}
                     warnflag++;
                     warn++;
                 }
@@ -1080,20 +1109,21 @@ main(int argc, char *argv[])
             if (interfaces[i].status)
             {
                 if (!(warn))
-                {
                     addstr(&perf, "[OK]");
-                }
                 else
-                {
                     addstr(&perf, "[WARNING]");
-                }
-                /* show the alias if configured */
-                if (get_aliases_flag && strlen(interfaces[i].alias) && strcmp(interfaces[i].alias, interfaces[i].descr))
-                {
-                    addstr(&perf, " %s (%s) is up", interfaces[i].descr, interfaces[i].alias);
-                } else {
-                    addstr(&perf, " %s is up", interfaces[i].descr);
-                }
+
+				if (get_names_flag && strlen(interfaces[i].name)) {
+					addstr(&out, ", %s", interfaces[i].name);
+					addstr(&perf, " %s is up", interfaces[i].name);
+				} else {
+					addstr(&out, " %s", interfaces[i].descr);
+					addstr(&perf, " %s is up", interfaces[i].descr);
+				}
+				if (get_aliases_flag && strlen(interfaces[i].alias))
+					addstr(&out, "  (%s) up", interfaces[i].alias);
+				else
+					addstr(&out, " up");
             }
             if (lastcheck && (interfaces[i].speed || speed) && (inbitps > 0ULL || outbitps > 0ULL))
             {
@@ -1422,6 +1452,7 @@ int usage(char *progname)
     printf(" -d|--down-is-ok\tdisables critical alerts for down interfaces\n");
     printf(" -a|--aliases\t\tretrieves the interface description\n");
     printf(" -A|--match-aliases\talso match against aliases (Option -a automatically enabled)\n");
+    printf(" -n|--short-names\tdisplay short names of interface (overridden by --aliases)\n");
     printf("    --timeout\t\tsets the SNMP timeout (in ms)\n");
     printf("    --sleep\t\tsleep between every SNMP query (in ms)\n");
     printf("\n");

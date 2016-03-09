@@ -47,6 +47,7 @@ struct ifStruct {
     int     status;
     char    descr[MAX_DESCR_LEN];
     char    alias[MAX_DESCR_LEN];
+    char    name[MAX_DESCR_LEN];
     u64     inOctets;
     u64     outOctets;
     unsigned long   inDiscards;
@@ -134,8 +135,9 @@ static char *oid_extended[] = {
     ".1.3.6.1.2.1.2.2.1.11",   /* ifInUcastPkts */
     ".1.3.6.1.2.1.2.2.1.17",   /* ifOutUcastPkts */
     ".1.3.6.1.2.1.2.2.1.5",    /* ifSpeed */
-    ".1.3.6.1.2.1.31.1.1.1.15",    /* ifHighSpeed */
+    ".1.3.6.1.2.1.31.1.1.1.15",/* ifHighSpeed */
     ".1.3.6.1.2.1.31.1.1.1.18",/* alias */
+    ".1.3.6.1.2.1.31.1.1.1.1", /* name */
     0
     };
 

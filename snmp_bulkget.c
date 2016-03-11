@@ -356,16 +356,16 @@ main(int argc, char *argv[])
     if (list) {
         status = regcomp(&re, list, REG_ICASE|REG_EXTENDED|REG_NOSUB);
         if (status != 0) {
-			printf("Error creating regex\n");
-			exit (3);
-		}
+            printf("Error creating regex\n");
+            exit (3);
+        }
 
         if (exclude_list) {
             status = regcomp(&exclude_re, exclude_list, REG_ICASE|REG_EXTENDED|REG_NOSUB);
             if (status != 0) {
-				printf("Error creating exclusion regex\n");
-				exit (3);
-			}
+                printf("Error creating exclusion regex\n");
+                exit (3);
+            }
         }
     }
 
@@ -430,7 +430,7 @@ main(int argc, char *argv[])
         /* send the request */
         status = snmp_synch_response(ss, pdu, &response);
         if (sleep_usecs)
-			usleep(sleep_usecs);
+            usleep(sleep_usecs);
 
         if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
 
@@ -1122,7 +1122,7 @@ netsnmp_session *start_session(netsnmp_session *session, char *community, char *
     /* bulk gets require V2c or later */
     if (mode == NONBULK)
         session->version = SNMP_VERSION_1;
-	else
+    else
         session->version = SNMP_VERSION_2c;
 
     session->community = (u_char *)community;
@@ -1319,7 +1319,7 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata, char *prefi
             }
 #ifdef DEBUG
            if (interface) 
-				fprintf(stderr, "interface %s found\n", interface);
+                fprintf(stderr, "interface %s found\n", interface);
 #endif
            word  = (ptr + strlen("::check_snmp::"));
         }
@@ -1327,12 +1327,12 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata, char *prefi
         /* finally split the name=value pair */
         valstr = strchr(word, '=');
         if (valstr) 
-			value = strtoull(valstr + 1, NULL, 10);
+            value = strtoull(valstr + 1, NULL, 10);
 
         var = strtok_r(word, "=", &last2);
 
         if (interface && var && valstr) 
-			set_value(oldperfdata, interface, var, value, valstr + 1);
+            set_value(oldperfdata, interface, var, value, valstr + 1);
         
     }
 
@@ -1351,7 +1351,7 @@ void set_value(struct ifStruct *oldperfdata, char *interface, char *var, u64 val
 
     if (mode == CISCO)
         if_vars = if_vars_cisco;
-	else
+    else
         if_vars = if_vars_default;
     
     for (i=0; i < MAX_INTERFACES; i++) {
@@ -1442,7 +1442,7 @@ int create_request(netsnmp_session *ss, struct OIDStruct **OIDpp, char **oid_lis
         else {
             printf("other error\n");
             snmp_sess_perror("snmp_bulkget", ss);
-    	}
+        }
     exit(2);
     }
 

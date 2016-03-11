@@ -890,18 +890,16 @@ main(int argc, char *argv[])
         if (interfaces[i].descr && !interfaces[i].ignore) {
             int warn = 0;
             
-            if (!interfaces[i].status && !interfaces[i].ignore) {
+            if (!interfaces[i].status && !interfaces[i].ignore && !interface[i].admin_down) {
                 if (crit_on_down_flag) {
                     addstr(&perf, "[CRITICAL] ");
                     errorflag++;
                     /* show the alias if configured */
                     if (get_names_flag && strlen(interfaces[i].name)) {
-                        if (interfaces[i].admin_down != 1)
-                            addstr(&out, ", %s", interfaces[i].name);
+                        addstr(&out, ", %s", interfaces[i].name);
                         addstr(&perf, "%s is down", interfaces[i].name);
                     } else {
-                        if ((interfaces[i].admin_down != 1))
-                            addstr(&out, ", %s", interfaces[i].descr);
+                        addstr(&out, ", %s", interfaces[i].descr);
                         addstr(&perf, "%s is down", interfaces[i].descr);
                     }
                     if (interfaces[i].admin_down != 1) {
@@ -912,10 +910,15 @@ main(int argc, char *argv[])
                     }
                 } else {
                     addstr(&perf, "[OK] ");
-                    if (get_names_flag && strlen(interfaces[i].name))
-                        addstr(&perf, "%s is up", interfaces[i].name);
-                    else
-                        addstr(&perf, "%s is up", interfaces[i].descr);
+                    if (interface[i].admin_down)
+                        addstr(&perf, "%s is down (administrative down)", 
+                              (get_names_flag && strlen(interfaces[i].name)) ? interfaces[i].name : interfaces[i].descr);
+                    else {
+                        if (get_names_flag && strlen(interfaces[i].name))
+                            addstr(&perf, "%s is up", interfaces[i].name);
+                        else
+                            addstr(&perf, "%s is up", interfaces[i].descr);
+                    }
                 }
             }
 

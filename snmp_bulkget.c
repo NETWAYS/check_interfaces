@@ -114,6 +114,7 @@ main(int argc, char *argv[])
     int     get_aliases_flag = 0;
     int     match_aliases_flag = 0;
     int     get_names_flag = 0;
+    int     print_all_flag = 0;
     int     err_tolerance = 50;
     int     coll_tolerance = -1;
     u64     speed = 0;
@@ -208,6 +209,7 @@ main(int argc, char *argv[])
         {"regex",       required_argument,  NULL,   'r'},
         {"exclude-regex",    required_argument,    NULL,    'R'},
         {"if-names",    no_argument,        NULL,   'N'},
+        {"debug-print", no_argument,        NULL,   'D'},
         {"speed",       required_argument,  NULL,   's'},
         {"lastcheck",   required_argument,  NULL,   't'},
         {"user",        required_argument,  NULL,   'u'},
@@ -219,7 +221,7 @@ main(int argc, char *argv[])
     };
 
 
-    while ((opt = getopt_long(argc, argv, "aAb:c:de:f:h:i:j:J:k:K:m:Np:P:r:R:s:t:u:x:?", longopts, NULL)) != -1)
+    while ((opt = getopt_long(argc, argv, "aAb:c:dDe:f:h:i:j:J:k:K:m:Np:P:r:R:s:t:u:x:?", longopts, NULL)) != -1)
     {
         switch(opt)
         {
@@ -238,6 +240,9 @@ main(int argc, char *argv[])
                 break;
             case 'd':
                 crit_on_down_flag = 0;
+                break;
+            case 'D':
+                print_all_flag = 1;
                 break;
             case 'e':
                 err_tolerance = strtol(optarg, NULL, 10);
@@ -902,7 +907,7 @@ main(int argc, char *argv[])
                         addstr(&out, ", %s", interfaces[i].descr);
                         addstr(&perf, "%s is down", interfaces[i].descr);
                     }
-                    if (interfaces[i].admin_down != 1) {
+                    if (!interfaces[i].admin_down) {
                         if (get_aliases_flag && strlen(interfaces[i].alias))
                             addstr(&out, " (%s) down", interfaces[i].alias);
                         else
@@ -1024,7 +1029,7 @@ main(int argc, char *argv[])
             printf(" %sdevice::check_snmp::uptime=%us", prefix?prefix:"", uptime);
 
     for (i=0;i<ifNumber;i++)  {
-        if (interfaces[i].descr && (interfaces[i].ignore != 1)) {
+        if (interfaces[i].descr && !interfaces[i].ignore && (!interfaces[i].admin_down || print_all_flag)) {
             printf(" %s%s::check_snmp::", prefix?prefix:"", oldperfdata[i].descr);
             printf("%s=%lluc %s=%lluc", if_vars[0], interfaces[i].inOctets, if_vars[1], interfaces[i].outOctets);
             printf(" %s=%luc %s=%luc", if_vars[2], interfaces[i].inDiscards, if_vars[3], interfaces[i].outDiscards);
@@ -1263,6 +1268,7 @@ int usage(char *progname)
     printf(" -d|--down-is-ok\tdisables critical alerts for down interfaces\n");
     printf(" -a|--aliases\t\tretrieves the interface description\n");
     printf(" -A|--match-aliases\talso match against aliases (Option -a automatically enabled)\n");
+    printf(" -D|--debug-print\tlist administrative down interfaces in perfdata\n");
     printf(" -N|--if-names\t\tuse ifName instead of ifDescr\n");
     printf("    --timeout\t\tsets the SNMP timeout (in ms)\n");
     printf("    --sleep\t\tsleep between every SNMP query (in ms)\n");

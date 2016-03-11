@@ -44,6 +44,7 @@ typedef unsigned long long u64;
 struct ifStruct {
     int     ignore;
     int     admin_down;
+    int     print_all_flag;
     int     index;
     int     status;
     char    descr[MAX_DESCR_LEN];

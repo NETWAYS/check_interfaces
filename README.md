@@ -60,6 +60,7 @@ the configured path.
      -a|--aliases       retrieves the interface description
                             This alias does not always deliver useful information
      -A|--match-aliases also test the Alias against the Regexes
+     -D|--debug-print   list administrative down interfaces in perfdata
      -N|--if-names      use ifName instead of ifDescr
         --timeout       sets the SNMP timeout (in ms)
      -m|--mode          special operating mode (default,cisco,nonbulk,bintec)

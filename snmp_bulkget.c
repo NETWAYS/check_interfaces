@@ -890,7 +890,7 @@ main(int argc, char *argv[])
         if (interfaces[i].descr && !interfaces[i].ignore) {
             int warn = 0;
             
-            if (!interfaces[i].status && !interfaces[i].ignore && !interface[i].admin_down) {
+            if (!interfaces[i].status && !interfaces[i].ignore && !interfaces[i].admin_down) {
                 if (crit_on_down_flag) {
                     addstr(&perf, "[CRITICAL] ");
                     errorflag++;
@@ -910,7 +910,7 @@ main(int argc, char *argv[])
                     }
                 } else {
                     addstr(&perf, "[OK] ");
-                    if (interface[i].admin_down)
+                    if (interfaces[i].admin_down)
                         addstr(&perf, "%s is down (administrative down)", 
                               (get_names_flag && strlen(interfaces[i].name)) ? interfaces[i].name : interfaces[i].descr);
                     else {

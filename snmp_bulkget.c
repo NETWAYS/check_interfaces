@@ -1,40 +1,40 @@
 /*
  *
  * COPYRIGHT:
- *  
+ *
  * This software is Copyright (c) 2011,2012 NETWAYS GmbH, William Preston
  *                                <support@netways.de>
- * 
+ *
  * (Except where explicitly superseded by other copyright notices)
- * 
- * 
+ *
+ *
  * LICENSE:
- * 
+ *
  * This work is made available to you under the terms of Version 2 of
  * the GNU General Public License. A copy of that license should have
  * been provided with this software, but in any event can be snarfed
  * from http://www.fsf.org.
- * 
+ *
  * This work is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 or visit their web page on the internet at
  * http://www.fsf.org.
- * 
- * 
+ *
+ *
  * CONTRIBUTION SUBMISSION POLICY:
- * 
+ *
  * (The following paragraph is not intended to limit the rights granted
  * to you to modify and distribute this software under the terms of
  * the GNU General Public License and is only of importance to you if
  * you choose to contribute your changes and enhancements to the
  * community by submitting them to NETWAYS GmbH.)
- * 
+ *
  * By intentionally submitting any modifications, corrections or
  * derivatives to this work, or any other work intended for use with
  * this Software, to NETWAYS GmbH, you confirm that
@@ -172,7 +172,7 @@ main(int argc, char *argv[])
     oid_ifp = oid_if_bulkget;
     oid_vals = oid_vals_default;
     if_vars = if_vars_default;
-    
+
     /* zero the interfaces array */
     memset(interfaces, '\0', sizeof (interfaces));
     memset(oldperfdata, '\0', sizeof (oldperfdata));
@@ -570,7 +570,7 @@ main(int argc, char *argv[])
         free(OIDp);
         OIDp = 0;
     }
-    
+
     /* we should have all interface descriptions in our array */
 
     /* now optionally fetch the interface aliases */
@@ -629,7 +629,7 @@ main(int argc, char *argv[])
                     /* now we fill our interfaces array with the alias
                      */
                     if (vars->type == ASN_OCTET_STR) {
-                        i = (int) vars->name[(vars->name_length - 1)]; 
+                        i = (int) vars->name[(vars->name_length - 1)];
                         if (i)  {
                             MEMCPY(interfaces[count].alias, vars->val.string, vars->val_len);
                             TERMSTR(interfaces[count].alias, vars->val_len);
@@ -711,7 +711,7 @@ main(int argc, char *argv[])
                             }
                             break;
                         case 1: /*ifOperStatus */
-                            if (vars->type == ASN_INTEGER) 
+                            if (vars->type == ASN_INTEGER)
                                 /* 1 is up(OK), 5 is dormant(assume OK) */
                                 interfaces[j].status = (*(vars->val.integer)==1 || *(vars->val.integer)==5)?1:0;
                             break;
@@ -732,7 +732,7 @@ main(int argc, char *argv[])
                                 interfaces[j].outOctets = *(vars->val.integer);
                             break;
                         case 6: /* ifOutDiscards */
-                            if (vars->type == ASN_COUNTER) 
+                            if (vars->type == ASN_COUNTER)
                                 interfaces[j].outDiscards = *(vars->val.integer);
                             break;
                         case 7: /* ifOutErrors or locIfCollisions */
@@ -745,7 +745,7 @@ main(int argc, char *argv[])
                     snmp_free_pdu(response);
                     response = 0;
                 }
-                
+
 
             }
 
@@ -857,12 +857,12 @@ main(int argc, char *argv[])
         }
 
     }
-     
+
 
     /* let the user know about interfaces that are down (and subsequently ignored) */
     if (ignore_count)
         addstr(&out, " - %d %s administratively down", ignore_count, ignore_count!=1?"are":"is");
-    
+
     if (OIDp) {
         free(OIDp);
         OIDp = 0;
@@ -884,12 +884,12 @@ main(int argc, char *argv[])
 
     if (oldperfdatap && lastcheck && oldperfdatap[0])
         parse_perfdata(oldperfdatap, oldperfdata, prefix);
-    
-    
+
+
     for (i=0;i<ifNumber;i++)  {
         if (interfaces[i].descr && !interfaces[i].ignore) {
             int warn = 0;
-            
+
             if (!interfaces[i].status && !interfaces[i].ignore && !interfaces[i].admin_down) {
                 if (crit_on_down_flag) {
                     addstr(&perf, "[CRITICAL] ");
@@ -911,7 +911,7 @@ main(int argc, char *argv[])
                 } else {
                     addstr(&perf, "[OK] ");
                     if (interfaces[i].admin_down)
-                        addstr(&perf, "%s is down (administrative down)", 
+                        addstr(&perf, "%s is down (administrative down)",
                               (get_names_flag && strlen(interfaces[i].name)) ? interfaces[i].name : interfaces[i].descr);
                     else {
                         if (get_names_flag && strlen(interfaces[i].name))
@@ -932,7 +932,7 @@ main(int argc, char *argv[])
                         addstr(&perf, "[WARNING] %s", interfaces[i].name);
                     else
                         addstr(&perf, "[WARNING] %s", interfaces[i].descr);
-                   
+
                     if (get_aliases_flag && strlen(interfaces[i].alias))
                         addstr(&perf, " (%s) has", interfaces[i].alias);
                     else
@@ -959,7 +959,7 @@ main(int argc, char *argv[])
                 }
             }
 
-            
+
             if (lastcheck && (interfaces[i].speed || speed)) {
                 inbitps = (subtract64(interfaces[i].inOctets, oldperfdata[i].inOctets) / (u64)lastcheck) * 8ULL;
                 outbitps = (subtract64(interfaces[i].outOctets, oldperfdata[i].outOctets) / (u64)lastcheck) * 8ULL;
@@ -998,9 +998,9 @@ main(int argc, char *argv[])
             addstr(&perf, "\n");
         }
     }
-    
+
     if (errorflag)
-        printf("CRITICAL:"); 
+        printf("CRITICAL:");
     else if (warnflag)
         printf("WARNING:");
     else
@@ -1022,7 +1022,7 @@ main(int argc, char *argv[])
 
 
     printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf", (int)out.len, out.text, (count - ignore_count), (((long double)tv.tv_sec + ((long double)tv.tv_usec/1000000)) - starttime ));
-    if (uptime) 
+    if (uptime)
             printf(" %sdevice::check_snmp::uptime=%us", prefix?prefix:"", uptime);
 
     for (i=0;i<ifNumber;i++)  {
@@ -1174,8 +1174,8 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user, char *au
             session->securityPrivProtoLen = USM_PRIV_PROTO_DES_LEN;
         } else {
             printf("Unknown priv protocol %s\n", priv_proto);
-            exit(3);    
-        } 
+            exit(3);
+        }
         session->securityLevel = SNMP_SEC_LEVEL_AUTHPRIV;
         session->securityPrivKeyLen = USM_PRIV_KU_LEN;
     } else {
@@ -1193,8 +1193,8 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user, char *au
             session->securityAuthProtoLen = USM_AUTH_PROTO_MD5_LEN;
         } else {
             printf("Unknown auth protocol %s\n", auth_proto);
-            exit(3);    
-        } 
+            exit(3);
+        }
         session->securityAuthKeyLen = USM_AUTH_KU_LEN;
     } else {
         session->securityLevel = SNMP_SEC_LEVEL_NOAUTH;
@@ -1288,7 +1288,7 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata, char *prefi
 #endif
     u64 value=0;
     char *valstr;
-    
+
 
 
     /* first split at spaces */
@@ -1321,7 +1321,7 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata, char *prefi
                     interface = interface + strlen(prefix);
             }
 #ifdef DEBUG
-           if (interface) 
+           if (interface)
                 fprintf(stderr, "interface %s found\n", interface);
 #endif
            word  = (ptr + strlen("::check_snmp::"));
@@ -1329,17 +1329,17 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata, char *prefi
 
         /* finally split the name=value pair */
         valstr = strchr(word, '=');
-        if (valstr) 
+        if (valstr)
             value = strtoull(valstr + 1, NULL, 10);
 
         var = strtok_r(word, "=", &last2);
 
-        if (interface && var && valstr) 
+        if (interface && var && valstr)
             set_value(oldperfdata, interface, var, value, valstr + 1);
-        
+
     }
 
-    
+
     return (0);
 }
 
@@ -1356,7 +1356,7 @@ void set_value(struct ifStruct *oldperfdata, char *interface, char *var, u64 val
         if_vars = if_vars_cisco;
     else
         if_vars = if_vars_default;
-    
+
     for (i=0; i < MAX_INTERFACES; i++) {
         if (strcmp(interface, oldperfdata[i].descr) == 0) {
             if (strcmp(var, if_vars[0]) == 0)
@@ -1403,7 +1403,7 @@ int create_request(netsnmp_session *ss, struct OIDStruct **OIDpp, char **oid_lis
 
     for (i = 0; oid_list[i]; i++) {
 #ifdef DEBUG2
-        fprintf(stderr, "%d: adding %s\n", i, oid_list[i]); 
+        fprintf(stderr, "%d: adding %s\n", i, oid_list[i]);
 #endif
         OIDp[i].name_len = MAX_OID_LEN;
         parseoids(i, oid_list[i], OIDp);
@@ -1437,7 +1437,7 @@ int create_request(netsnmp_session *ss, struct OIDStruct **OIDpp, char **oid_lis
             printf("Timeout fetching interface stats from %s ",
                 ss->peername);
             for (i = 0; oid_list[i]; i++) {
-                printf("%c%s", i?',':'(', oid_list[i]); 
+                printf("%c%s", i?',':'(', oid_list[i]);
             }
             printf(")\n");
             exit(EXITCODE_TIMEOUT);
@@ -1473,7 +1473,7 @@ void create_pdu(int mode, char **oidlist, netsnmp_pdu **pdu, struct OIDStruct **
 {
     int i;
     static char **oid_ifp;
-    
+
     if (mode == NONBULK)
         *pdu = snmp_pdu_create(SNMP_MSG_GET);
 

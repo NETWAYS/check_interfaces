@@ -910,16 +910,14 @@ main(int argc, char *argv[])
                     }
                 } else {
                     addstr(&perf, "[OK] ");
-                    if (interfaces[i].admin_down)
-                        addstr(&perf, "%s is down (administrative down)",
-                              (get_names_flag && strlen(interfaces[i].name)) ? interfaces[i].name : interfaces[i].descr);
-                    else {
-                        if (get_names_flag && strlen(interfaces[i].name))
-                            addstr(&perf, "%s is up", interfaces[i].name);
-                        else
-                            addstr(&perf, "%s is up", interfaces[i].descr);
-                    }
+                    if (get_names_flag && strlen(interfaces[i].name))
+                        addstr(&perf, "%s is up", interfaces[i].name);
+                    else
+                        addstr(&perf, "%s is up", interfaces[i].descr);
                 }
+            } else if (interfaces[i].admin_down) {
+                addstr(&perf, "[OK] %s is down (administrative down)",
+                (get_names_flag && strlen(interfaces[i].name)) ? interfaces[i].name : interfaces[i].descr);
             }
 
             /* check if errors on the interface are increasing faster than our defined value */

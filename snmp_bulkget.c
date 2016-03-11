@@ -1001,40 +1001,38 @@ main(int argc, char *argv[])
     
     
     for (i=0;i<ifNumber;i++)  {
-        if (interfaces[i].descr && (interfaces[i].ignore != 1))
+        if (interfaces[i].descr)
         {
             int warn = 0;
             
-            if (! interfaces[i].status) {
+            if (!interfaces[i].status) {
                 if (crit_on_down_flag)
                 {
                     addstr(&perf, "[CRITICAL] ");
                     errorflag++;
                     /* show the alias if configured */
                     if (get_names_flag && strlen(interfaces[i].name)) {
-                        addstr(&out, ", %s", interfaces[i].name);
+						if (interfaces[i].ignore != 1)
+                        	addstr(&out, ", %s", interfaces[i].name);
                         addstr(&perf, "%s is down", interfaces[i].name);
 					} else {
-                        addstr(&out, ", %s", interfaces[i].descr);
+						if ((interfaces[i].ignore != 1))
+                        	addstr(&out, ", %s", interfaces[i].descr);
                         addstr(&perf, "%s is down", interfaces[i].descr);
 					}
-                    if (get_aliases_flag && strlen(interfaces[i].alias))
-                        addstr(&out, " (%s) down", interfaces[i].alias);
-                    else
-                        addstr(&out, " down");
+					if (interfaces[i].ignore != 1) {
+						if (get_aliases_flag && strlen(interfaces[i].alias))
+							addstr(&out, " (%s) down", interfaces[i].alias);
+						else
+							addstr(&out, " down");
+					}
                 } else {
                     addstr(&perf, "[OK] ");
                     if (get_names_flag && strlen(interfaces[i].name)) {
-                        addstr(&out, ", %s", interfaces[i].name);
                         addstr(&perf, "%s is up", interfaces[i].name);
 					} else {
-                        addstr(&out, ", %s", interfaces[i].descr);
                         addstr(&perf, "%s is up", interfaces[i].descr);
 					}
-                    if (get_aliases_flag && strlen(interfaces[i].alias))
-                        addstr(&out, " (%s) up", interfaces[i].alias);
-                    else
-                        addstr(&out, " up");
                 }
             }
 
@@ -1047,14 +1045,14 @@ main(int argc, char *argv[])
                 if (oldperfdatap)
                 {
                     if (get_names_flag && strlen(interfaces[i].name)) {
-                        addstr(&out, "[WARNING] %s", interfaces[i].name);
+                        addstr(&perf, "[WARNING] %s", interfaces[i].name);
 					} else {
-                        addstr(&out, "[WARNING] %s", interfaces[i].descr);
+                        addstr(&perf, "[WARNING] %s", interfaces[i].descr);
 					}
                     if (get_aliases_flag && strlen(interfaces[i].alias))
-                        addstr(&out, " (%s) has", interfaces[i].alias);
+                        addstr(&perf, " (%s) has", interfaces[i].alias);
                     else
-                        addstr(&out, " has");
+                        addstr(&perf, " has");
 
                     /* if we are not in cisco mode simply use "errors" */
 
@@ -1114,16 +1112,10 @@ main(int argc, char *argv[])
                     addstr(&perf, "[WARNING]");
 
 				if (get_names_flag && strlen(interfaces[i].name)) {
-					addstr(&out, ", %s", interfaces[i].name);
 					addstr(&perf, " %s is up", interfaces[i].name);
 				} else {
-					addstr(&out, " %s", interfaces[i].descr);
 					addstr(&perf, " %s is up", interfaces[i].descr);
 				}
-				if (get_aliases_flag && strlen(interfaces[i].alias))
-					addstr(&out, "  (%s) up", interfaces[i].alias);
-				else
-					addstr(&out, " up");
             }
             if (lastcheck && (interfaces[i].speed || speed) && (inbitps > 0ULL || outbitps > 0ULL))
             {

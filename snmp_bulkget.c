@@ -1452,7 +1452,7 @@ int usage(char *progname)
     printf(" -d|--down-is-ok\tdisables critical alerts for down interfaces\n");
     printf(" -a|--aliases\t\tretrieves the interface description\n");
     printf(" -A|--match-aliases\talso match against aliases (Option -a automatically enabled)\n");
-    printf(" -n|--short-names\tdisplay short names of interface (overridden by --aliases)\n");
+    printf(" -N|--if-names\tuse ifName instead of ifDescr\n");
     printf("    --timeout\t\tsets the SNMP timeout (in ms)\n");
     printf("    --sleep\t\tsleep between every SNMP query (in ms)\n");
     printf("\n");

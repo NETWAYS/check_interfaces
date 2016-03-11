@@ -687,7 +687,7 @@ main(int argc, char *argv[])
         /* add the interface to the oldperfdata list */
         if (interfaces[j].descr) strcpy_nospaces(oldperfdata[j].descr, interfaces[j].descr);
 
-        if (! interfaces[j].ignore) {
+        if (!interfaces[j].ignore) {
 
             /* fetch the standard values first */
             if (create_request(ss, &OIDp, oid_vals, interfaces[j].index, &response)) {
@@ -706,7 +706,7 @@ main(int argc, char *argv[])
                         case 0: /* ifAdminStatus */
                             if (vars->type == ASN_INTEGER && *(vars->val.integer)==2) {
                                 /* ignore interfaces that are administratively down */
-                                interfaces[j].ignore = 1;
+                                interfaces[j].admin_down= 1;
                                 ignore_count++;
                             }
                             break;
@@ -827,14 +827,14 @@ main(int argc, char *argv[])
                 status =  !regexec(&re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
                           (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
             status2 = 0;
-            if (status && exclude_list)
+            if (status && exclude_list) {
                 if (get_names_flag)
                     status2 = !regexec(&exclude_re, interfaces[i].name, (size_t) 0, NULL, 0) ||
                               (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
                 else
                     status2 = !regexec(&exclude_re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
                               (get_aliases_flag && !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0)));
-            if (status && !status2) {
+            } if (status && !status2) {
                 count++;
 #ifdef DEBUG
                 fprintf(stderr, "Interface %d (%s) matched\n", interfaces[i].index, interfaces[i].descr);
@@ -887,20 +887,20 @@ main(int argc, char *argv[])
     
     
     for (i=0;i<ifNumber;i++)  {
-        if (interfaces[i].descr) {
+        if (interfaces[i].descr && !interfaces[i].ignore) {
             int warn = 0;
             
-            if (!interfaces[i].status) {
+            if (!interfaces[i].status && !interfaces[i].ignore) {
                 if (crit_on_down_flag) {
                     addstr(&perf, "[CRITICAL] ");
                     errorflag++;
                     /* show the alias if configured */
                     if (get_names_flag && strlen(interfaces[i].name)) {
-                        if (interfaces[i].ignore != 1)
+                        if (interfaces[i].admin_down != 1)
                             addstr(&out, ", %s", interfaces[i].name);
                         addstr(&perf, "%s is down", interfaces[i].name);
                     } else {
-                        if ((interfaces[i].ignore != 1))
+                        if ((interfaces[i].admin_down != 1))
                             addstr(&out, ", %s", interfaces[i].descr);
                         addstr(&perf, "%s is down", interfaces[i].descr);
                     }
@@ -924,7 +924,7 @@ main(int argc, char *argv[])
                 (interfaces[i].inErrors > (oldperfdata[i].inErrors + (unsigned long) err_tolerance)
                 || interfaces[i].outErrors > (oldperfdata[i].outErrors + (unsigned long) coll_tolerance))
                 ) {
-                if (oldperfdatap) {
+                if (oldperfdatap && !interfaces[i].ignore) {
                     if (get_names_flag && strlen(interfaces[i].name))
                         addstr(&perf, "[WARNING] %s", interfaces[i].name);
                     else
@@ -973,7 +973,7 @@ main(int argc, char *argv[])
                     warn++;
             }
 
-            if (interfaces[i].status) {
+            if (interfaces[i].status && !interfaces[i].ignore) {
                 if (!(warn))
                     addstr(&perf, "[OK]");
                 else

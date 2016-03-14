@@ -920,7 +920,7 @@ main(int argc, char *argv[])
                     else
                         addstr(&perf, "%s is up", interfaces[i].descr);
                 }
-            } else if (interfaces[i].admin_down) {
+            } else if (interfaces[i].admin_down && print_all_flag) {
                 addstr(&perf, "[OK] %s is down (administrative down)",
                 (get_names_flag && strlen(interfaces[i].name)) ? interfaces[i].name : interfaces[i].descr);
             }

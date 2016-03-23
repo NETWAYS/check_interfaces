@@ -11,7 +11,7 @@ This plugin uses the bulk-get mode of SNMPv2 by default - pass it the option -m 
 In order to compile this plugin you will need the `NET SNMP Development` package
 (libsnmp-dev under Debian) as well as `autoconf` and the standard compilation tools.
 
-Download and extract the tarball from https://www.netways.org/projects/plugins/files
+Download and extract the tarball from https://www.netways.org/projects/check-interfaces/files
 
     autoconf (only needed if the configure script has not been created)
     ./configure

@@ -811,6 +811,32 @@ main(int argc, char *argv[])
                     response = 0;
                 }
             }
+
+            /* now fetch the Cisco-specific extended oids */
+            if (mode == CISCO && create_request(ss, &OIDp, oid_extended_cisco, interfaces[j].index, &response)) {
+                for (vars = response->variables; vars; vars = vars->next_variable) {
+                    k = -1;
+                    /* compare the received value to the requested value */
+                    for ( i = 0; oid_extended_cisco[i]; i++) {
+                        if (!memcmp(OIDp[i].name, vars->name, OIDp[i].name_len*sizeof(oid))) {
+                            k = i;
+                            break;
+                        }
+                    }
+
+                    switch(k) /* the offset into oid_extended_cisco */
+                    {
+                        case 0: /* portAdditionalOperStatus */
+                            if (vars->type == ASN_OCTET_STR)
+                                interfaces[j].err_disable = !!(vars->val.string[1] & (unsigned char)32u);
+                            break;
+                    }
+                }
+                if (response) {
+                    snmp_free_pdu(response);
+                    response = 0;
+                }
+            }
         }
     }
 
@@ -895,7 +921,7 @@ main(int argc, char *argv[])
         if (interfaces[i].descr && !interfaces[i].ignore) {
             int warn = 0;
 
-            if (!interfaces[i].status && !interfaces[i].ignore && !interfaces[i].admin_down) {
+            if ((!interfaces[i].status || interfaces[i].err_disable) && !interfaces[i].ignore && !interfaces[i].admin_down) {
                 if (crit_on_down_flag) {
                     addstr(&perf, "[CRITICAL] ");
                     errorflag++;

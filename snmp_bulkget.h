@@ -47,6 +47,7 @@ struct ifStruct {
     int     print_all_flag;
     int     index;
     int     status;
+    int     err_disable;
     char    descr[MAX_DESCR_LEN];
     char    alias[MAX_DESCR_LEN];
     char    name[MAX_DESCR_LEN];
@@ -141,7 +142,12 @@ static char *oid_extended[] = {
     ".1.3.6.1.2.1.31.1.1.1.18",/* alias */
     ".1.3.6.1.2.1.31.1.1.1.1", /* name */
     0
-    };
+};
+
+static char *oid_extended_cisco[] = {
+    ".1.3.6.1.4.1.9.5.1.4.1.1.23", /* portAdditionalOperStatus */
+    0
+};
 
 
 

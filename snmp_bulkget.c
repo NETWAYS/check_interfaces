@@ -933,11 +933,15 @@ main(int argc, char *argv[])
                         addstr(&out, ", %s", interfaces[i].descr);
                         addstr(&perf, "%s is down", interfaces[i].descr);
                     }
+                    if (interfaces[i].err_disable)
+                        addstr(&perf, " (errdisable)");
                     if (!interfaces[i].admin_down) {
                         if (get_aliases_flag && strlen(interfaces[i].alias))
                             addstr(&out, " (%s) down", interfaces[i].alias);
                         else
                             addstr(&out, " down");
+                        if (interfaces[i].err_disable)
+                            addstr(&out, " (errdisable)");
                     }
                 } else {
                     addstr(&perf, "[OK] ");

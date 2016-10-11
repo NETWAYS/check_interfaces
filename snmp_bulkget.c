@@ -1262,7 +1262,11 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user, char *au
 int usage(char *progname)
 {
     int i;
-    printf("Usage: %s -h <hostname> [OPTIONS]\n", progname);
+    printf(
+#ifdef PACKAGE_STRING
+    PACKAGE_STRING "\n\n"
+#endif
+    "Usage: %s -h <hostname> [OPTIONS]\n", progname);
 
     printf(" -c|--community\t\tcommunity (default public)\n");
     printf(" -r|--regex\t\tinterface list regexp\n");

@@ -84,7 +84,7 @@
  */
 
 
-void create_pdu(int, char **, netsnmp_pdu **, struct OIDStruct **, int, int);
+void create_pdu(int, char **, netsnmp_pdu **, struct OIDStruct **, int, long);
 
 
 /* hardware mode */
@@ -94,6 +94,8 @@ int     mode = DEFAULT;
 unsigned int uptime = 0, sleep_usecs = 0;
 unsigned int lastcheck = 0;
 unsigned long global_timeout = DFLT_TIMEOUT;
+
+int ifNumber = 0;
 
 int
 main(int argc, char *argv[])
@@ -105,7 +107,6 @@ main(int argc, char *argv[])
     netsnmp_variable_list *vars;
     int     status, status2;
     int     count = 0; /* used for: the number of interfaces we receive, the number of regex matches */
-    int     ifNumber = 0;
     int     i, j, k;
     int     errorflag = 0;
     int     warnflag = 0;
@@ -121,8 +122,8 @@ main(int argc, char *argv[])
     int     bw = 0;
     size_t  size,size2;
 
-    struct ifStruct interfaces[MAX_INTERFACES]; /* current interface data */
-    struct ifStruct oldperfdata[MAX_INTERFACES]; /* previous check interface data */
+    struct ifStruct *interfaces = NULL; /* current interface data */
+    struct ifStruct *oldperfdata = NULL; /* previous check interface data */
     struct OIDStruct *OIDp;
 
 
@@ -173,11 +174,6 @@ main(int argc, char *argv[])
     oid_ifp = oid_if_bulkget;
     oid_vals = oid_vals_default;
     if_vars = if_vars_default;
-
-    /* zero the interfaces array */
-    memset(interfaces, '\0', sizeof (interfaces));
-    memset(oldperfdata, '\0', sizeof (oldperfdata));
-
 
     char *progname = strrchr(argv[0], '/');
     if (*progname && *(progname+1))
@@ -418,7 +414,7 @@ main(int argc, char *argv[])
 
         /* build our request depending on the mode */
         if (count==0)
-            create_pdu(mode, oid_ifp, &pdu, &OIDp, 2, MAX_INTERFACES);
+            create_pdu(mode, oid_ifp, &pdu, &OIDp, 2, MAX_REPETITIONS_LIMIT);
         else {
             /* we have not received all interfaces in the preceding packet, so fetch the next lot */
 
@@ -427,7 +423,7 @@ main(int argc, char *argv[])
             else {
                 pdu = snmp_pdu_create(SNMP_MSG_GETBULK);
                 pdu->non_repeaters = 0;
-                pdu->max_repetitions = MAX_INTERFACES;
+                pdu->max_repetitions = MAX_REPETITIONS_LIMIT;
             }
             snmp_add_null_var(pdu, lastOid.name, lastOid.name_len);
         }
@@ -467,11 +463,8 @@ main(int argc, char *argv[])
                     vars = vars->next_variable;
                 }
 
-                if (ifNumber > MAX_INTERFACES) {
-                    /* if MAX_INTERFACES is not enough then we need to recompile */
-                    printf("Error, this device has more than %d interfaces - you will need to alter the code and recompile, sorry.\n", MAX_INTERFACES);
-                    exit (3);
-                }
+                interfaces = (struct ifStruct*)calloc((size_t)ifNumber, sizeof(struct ifStruct));
+                oldperfdata = (struct ifStruct*)calloc((size_t)ifNumber, sizeof(struct ifStruct));
 
 #ifdef DEBUG
                 fprintf(stderr, "got %d interfaces\n", ifNumber);
@@ -1391,7 +1384,7 @@ void set_value(struct ifStruct *oldperfdata, char *interface, char *var, u64 val
     else
         if_vars = if_vars_default;
 
-    for (i=0; i < MAX_INTERFACES; i++) {
+    for (i=0; i < ifNumber; i++) {
         if (strcmp(interface, oldperfdata[i].descr) == 0) {
             if (strcmp(var, if_vars[0]) == 0)
                 oldperfdata[i].inOctets = value;
@@ -1503,7 +1496,7 @@ int parseoids(int i, char *oid_list, struct OIDStruct *query)
     return(0);
 }
 
-void create_pdu(int mode, char **oidlist, netsnmp_pdu **pdu, struct OIDStruct **oids, int nonrepeaters, int max)
+void create_pdu(int mode, char **oidlist, netsnmp_pdu **pdu, struct OIDStruct **oids, int nonrepeaters, long max)
 {
     int i;
     static char **oid_ifp;

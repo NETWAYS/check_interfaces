@@ -1,5 +1,7 @@
 
 
+#include <limits.h>
+
 #ifdef HAVE_GETADDRINFO
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -11,11 +13,10 @@
 
 /*
  * defines
- * MAX_INTERFACES = allocate memory for this number of interfaces
+ * MAX_REPETITIONS_LIMIT = limit for netsnmp_pdu.max_repetitions
  * MAX_STRING = allocate memory for this length of output string
  */
-/*#define MAX_INTERFACES 64 */
-#define MAX_INTERFACES 4096
+#define MAX_REPETITIONS_LIMIT (LONG_MAX - 1L)
 #define MAX_STRING 65536
 #define MAX_DESCR_LEN 60
 #define UPTIME_TOLERANCE_IN_SECS 30

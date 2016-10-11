@@ -1021,7 +1021,9 @@ main(int argc, char *argv[])
                 free(ins);
                 free(outs);
             }
-            addstr(&perf, "\n");
+            if (perf.len > 0u && perf.text[(perf.len - 1u)] != '\n') {
+                addstr(&perf, "\n");
+            }
         }
     }
 

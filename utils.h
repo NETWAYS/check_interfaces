@@ -28,3 +28,6 @@ int addstrold(char **, size_t *, const char *, ...);
 int addstr(String *, const char *, ...);
 void strcpy_nospaces(char *, char *);
 int gauge_to_si(u64, char **);
+void benchmark_start(char const *, ...);
+void benchmark_end(void);
+char *implode(char const *, char **);

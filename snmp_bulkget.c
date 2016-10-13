@@ -95,7 +95,13 @@ unsigned int uptime = 0, sleep_usecs = 0;
 unsigned int lastcheck = 0;
 unsigned long global_timeout = DFLT_TIMEOUT;
 
+static
 int ifNumber = 0;
+
+#ifdef DEBUG
+static
+char *implode_result;
+#endif
 
 int
 main(int argc, char *argv[])
@@ -374,11 +380,17 @@ main(int argc, char *argv[])
     if (getenv("MIBS") == NULL)
         setenv("MIBS", "", 1);
 
+#ifdef DEBUG
+    benchmark_start("Start SNMP session");
+#endif
     if (user)
         /* use snmpv3 */
         ss=start_session_v3(&session, user, auth_proto, auth_pass, priv_proto, priv_pass, hostname);
     else
         ss=start_session(&session, community, hostname);
+#ifdef DEBUG
+    benchmark_end();
+#endif
 
     if (mode == NONBULK) {
         oid_ifp = oid_if_get;
@@ -428,8 +440,16 @@ main(int argc, char *argv[])
             snmp_add_null_var(pdu, lastOid.name, lastOid.name_len);
         }
 
+#ifdef DEBUG
+        implode_result = implode(", ", oid_ifp + count);
+        benchmark_start("Send SNMP request for OIDs: %s", implode_result);
+#endif
         /* send the request */
         status = snmp_synch_response(ss, pdu, &response);
+#ifdef DEBUG
+        benchmark_end();
+        free(implode_result);
+#endif
         if (sleep_usecs)
             usleep(sleep_usecs);
 
@@ -596,8 +616,16 @@ main(int argc, char *argv[])
                 snmp_add_null_var(pdu, lastOid.name, lastOid.name_len);
             }
 
+#ifdef DEBUG
+            implode_result = implode(", ", oid_aliasp + count);
+            benchmark_start("Send SNMP request for OIDs: %s", implode_result);
+#endif
             /* send the request */
             status = snmp_synch_response(ss, pdu, &response);
+#ifdef DEBUG
+            benchmark_end();
+            free(implode_result);
+#endif
             if (sleep_usecs) usleep(sleep_usecs);
 
             if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
@@ -1068,7 +1096,13 @@ main(int argc, char *argv[])
     }
     printf("\n%*s", (int)perf.len, perf.text);
 
+#ifdef DEBUG
+    benchmark_start("Close SNMP session");
+#endif
     snmp_close(ss);
+#ifdef DEBUG
+    benchmark_end();
+#endif
 
     SOCK_CLEANUP;
     return ((errorflag)?2:((warnflag)?1:0));
@@ -1448,7 +1482,15 @@ int create_request(netsnmp_session *ss, struct OIDStruct **OIDpp, char **oid_lis
 
     *OIDpp = OIDp;
 
+#ifdef DEBUG
+    implode_result = implode(", ", oid_list);
+    benchmark_start("Send SNMP request for OIDs: %s", implode_result);
+#endif
     status = snmp_synch_response(ss, pdu, response);
+#ifdef DEBUG
+    benchmark_end();
+    free(implode_result);
+#endif
     if (sleep_usecs) usleep(sleep_usecs);
 
     if (status == STAT_SUCCESS && (*response)->errstat == SNMP_ERR_NOERROR) {

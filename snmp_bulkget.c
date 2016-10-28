@@ -103,6 +103,12 @@ static
 char *implode_result;
 #endif
 
+static
+int session_retries = 2;
+
+static
+long pdu_max_repetitions = 4096L;
+
 int
 main(int argc, char *argv[])
 {
@@ -219,6 +225,8 @@ main(int argc, char *argv[])
         {"help",        no_argument,        NULL,   '?'},
         {"timeout",     required_argument,  NULL,   2},
         {"sleep",       required_argument,  NULL,   3},
+        {"retries",     required_argument,  NULL,   4},
+        {"max-repetitions", required_argument, NULL, 5},
         {NULL,          0,                  NULL,   0}
     };
 
@@ -317,6 +325,12 @@ main(int argc, char *argv[])
             case 3:
                 /* convert from ms to us */
                 sleep_usecs = strtol(optarg, NULL, 10) * 1000UL;
+                break;
+            case 4:
+                session_retries = atoi(optarg);
+                break;
+            case 5:
+                pdu_max_repetitions = strtol(optarg, NULL, 10);
                 break;
             case '?':
             default:
@@ -426,7 +440,7 @@ main(int argc, char *argv[])
 
         /* build our request depending on the mode */
         if (count==0)
-            create_pdu(mode, oid_ifp, &pdu, &OIDp, 2, MAX_REPETITIONS_LIMIT);
+            create_pdu(mode, oid_ifp, &pdu, &OIDp, 2, pdu_max_repetitions);
         else {
             /* we have not received all interfaces in the preceding packet, so fetch the next lot */
 
@@ -435,7 +449,7 @@ main(int argc, char *argv[])
             else {
                 pdu = snmp_pdu_create(SNMP_MSG_GETBULK);
                 pdu->non_repeaters = 0;
-                pdu->max_repetitions = MAX_REPETITIONS_LIMIT;
+                pdu->max_repetitions = pdu_max_repetitions;
             }
             snmp_add_null_var(pdu, lastOid.name, lastOid.name_len);
         }
@@ -1193,7 +1207,7 @@ netsnmp_session *start_session(netsnmp_session *session, char *community, char *
     session->community = (u_char *)community;
     session->community_len = strlen(community);
     session->timeout = global_timeout;
-    session->retries = 0;
+    session->retries = session_retries;
 
     /*
      * Open the session
@@ -1276,7 +1290,7 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user, char *au
     }
 
     session->timeout = global_timeout;
-    session->retries = 0;
+    session->retries = session_retries;
 
     /*
      * Open the session
@@ -1335,6 +1349,8 @@ int usage(char *progname)
     printf(" -N|--if-names\t\tuse ifName instead of ifDescr\n");
     printf("    --timeout\t\tsets the SNMP timeout (in ms)\n");
     printf("    --sleep\t\tsleep between every SNMP query (in ms)\n");
+    printf("    --retries\t\thow often to retry before giving up\n");
+    printf("    --max-repetitions\t\tsee <http://www.net-snmp.org/docs/man/snmpbulkwalk.html>\n");
     printf("\n");
     return 3;
 }

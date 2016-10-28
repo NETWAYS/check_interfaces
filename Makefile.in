@@ -8,7 +8,7 @@ TARGET=check_interfaces
 
 
 CPPFLAGS=@CPPFLAGS@
-LDFLAGS=@LDFLAGS@
+LDFLAGS=@LDFLAGS@ -lrt
 CFLAGS=@CFLAGS@ @DEFS@
 # shared library flags (assumes gcc)
 # DLFLAGS=-fPIC -shared

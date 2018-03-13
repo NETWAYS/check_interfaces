@@ -583,7 +583,10 @@ main(int argc, char *argv[])
                         session.peername);
                 exit(EXITCODE_TIMEOUT);
             }
-            else
+            else if (status == STAT_ERROR && ss->s_snmp_errno == SNMPERR_TIMEOUT) {
+               printf("Timeout\n");
+                exit(EXITCODE_TIMEOUT);
+            } else
                 snmp_sess_perror("snmp_bulkget", ss);
             exit (2);
 
@@ -752,8 +755,8 @@ main(int argc, char *argv[])
                             break;
                         case 1: /*ifOperStatus */
                             if (vars->type == ASN_INTEGER)
-                                /* 1 is up(OK), 5 is dormant(assume OK) */
-                                interfaces[j].status = (*(vars->val.integer)==1 || *(vars->val.integer)==5)?1:0;
+                                /* 1 is up(OK), 3 is testing (assume OK), 5 is dormant(assume OK) */
+                                interfaces[j].status = (*(vars->val.integer)==1 || *(vars->val.integer)==5 || *(vars->val.integer)==3)?1:0;
                             break;
                         case 2: /* ifInOctets */
                             if (vars->type == ASN_COUNTER)

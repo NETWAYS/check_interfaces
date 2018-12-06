@@ -16,7 +16,7 @@
  * MAX_STRING = allocate memory for this length of output string
  */
 #define MAX_STRING 65536
-#define MAX_DESCR_LEN 60
+#define MAX_DESCR_LEN 255
 #define UPTIME_TOLERANCE_IN_SECS 30
 #define OFLO32 4294967295ULL
 #define OFLO64 18446744073709551615ULL

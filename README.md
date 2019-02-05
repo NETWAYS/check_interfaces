@@ -8,20 +8,29 @@ This plugin uses the bulk-get mode of SNMPv2 by default - pass it the option -m 
 
 ### Installation
 
-In order to compile this plugin you will need the `NET SNMP Development` package
-(libsnmp-dev under Debian) as well as `autoconf` and the standard compilation tools.
+In order to compile this plugin you need the `NET SNMP Development` package
+(`libsnmp-dev` for Debian) as well as `autoconf` and the standard compilation tools.
 
-Download and extract the tarball from https://www.netways.org/projects/check-interfaces/files
+Example for Debian:
 
-    autoconf (only needed if the configure script has not been created)
-    ./configure
+```
+apt-get update
+apt-get -y install git build-essential libsnmp-dev
+```
+
+Download and extract the tarball from https://github.com/NETWAYS/check_interfaces/releases
+
+```
+./configure --libexecdir=/usr/lib/nagios/plugins
+```
 
 Running "make" should successfully compile the plugin, and "make install" will install them under
 the configured path.
 
-    make 
-    make install
-
+```
+make
+make install
+```
 
 ### Usage
 

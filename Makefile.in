@@ -14,7 +14,7 @@ CFLAGS=@CFLAGS@ @DEFS@
 # DLFLAGS=-fPIC -shared
 BUILDLIBS=@SNMP_LIBS@ @LIBS@
 
-.PHONY: debug clean all install
+.PHONY: debug clean distclean all install
 all: build strip
 build: $(TARGET)
 
@@ -28,12 +28,11 @@ debug: CFLAGS += -DDEBUG -g -O0
 debug: LDFLAGS += -g -O0
 debug: build
 
-
 clean:
-	rm $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(TARGET)
 
+distclean: clean
+	rm -f config.log config.status Makefile
 
 install: all
 	$(INSTALL) -t $(DESTDIR) $(TARGET)
-
-

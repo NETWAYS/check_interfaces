@@ -38,10 +38,10 @@ make install
 (see also check_interface --help)
 
     check_interface -c public -h 192.168.0.1 -r 'FastEth' -p '$SERVICEPERFDATA$' -t $LASTSERVICECHECK$ -a
-    
+
     Options;
      -h                 address of device
-    
+
      -c|--community     community (default public)
      -r|--regex         interface list regexp
                             Regex to match interfaces (important, this is a Regular Expression
@@ -122,3 +122,30 @@ Examples;
 If unsure of a pattern, you should test it on the command line thus;
 
     check_interface -c public -h 192.168.0.1 -r 'Eth(0|2)$'
+
+### Docker Build Environment
+
+You can use docker for a development environment.
+
+**Usage:**
+
+Simple use:
+
+```sh
+docker build -t check_interfaces .
+docker run --rm check_interfaces -c public -h sw1
+```
+
+Persistent container
+
+```sh
+docker build -t check_interfaces .
+docker create --name="check_sw1" check_interfaces -c public -h sw1
+docker start -a check_sw1
+```
+
+Create a debug build
+
+```sh
+docker build --build-arg target=debug -t check_interfaces .
+```

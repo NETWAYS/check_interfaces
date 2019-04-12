@@ -1,0 +1,13 @@
+# Ignore all
+*
+.*
+
+# Except what we need to build
+!/configure
+!/configure.ac
+!/install-sh
+!/Makefile.in
+!/snmp_bulkget.c
+!/snmp_bulkget.h
+!/utils.c
+!/utils.h

@@ -984,9 +984,9 @@ main(int argc, char *argv[])
                 } else {
                     addstr(&perf, "[OK] ");
                     if (get_names_flag && strlen(interfaces[i].name))
-                        addstr(&perf, "%s is up", interfaces[i].name);
+                        addstr(&perf, "%s is down", interfaces[i].name);
                     else
-                        addstr(&perf, "%s is up", interfaces[i].descr);
+                        addstr(&perf, "%s is down", interfaces[i].descr);
                 }
             } else if (interfaces[i].admin_down && print_all_flag) {
                 addstr(&perf, "[OK] %s is down (administrative down)",
@@ -1031,7 +1031,7 @@ main(int argc, char *argv[])
             }
 
 
-            if (lastcheck && (interfaces[i].speed || speed)) {
+            if (lastcheck && (interfaces[i].speed || speed) && !interfaces[i].admin_down) {
                 inbitps = (subtract64(interfaces[i].inOctets, oldperfdata[i].inOctets) / (u64)lastcheck) * 8ULL;
                 outbitps = (subtract64(interfaces[i].outOctets, oldperfdata[i].outOctets) / (u64)lastcheck) * 8ULL;
                 if (speed) {
@@ -1043,8 +1043,10 @@ main(int argc, char *argv[])
                     outload = (long double)outbitps / ((long double)interfaces[i].speed/100L);
                 }
 
-                if ( (bw > 0) && ((int)inload > bw || (int)outload > bw))
+                if ( (bw > 0) && ((int)inload > bw || (int)outload > bw)) {
                     warn++;
+                    warnflag++;
+                }
             }
 
             if (interfaces[i].status && !interfaces[i].ignore) {
@@ -1058,7 +1060,7 @@ main(int argc, char *argv[])
                 else
                     addstr(&perf, " %s is up", interfaces[i].descr);
             }
-            if (lastcheck && (interfaces[i].speed || speed) && (inbitps > 0ULL || outbitps > 0ULL)) {
+            if (lastcheck && (interfaces[i].speed || speed) && (inbitps > 0ULL || outbitps > 0ULL) && !interfaces[i].admin_down) {
                 gauge_to_si(inbitps, &ins);
                 gauge_to_si(outbitps, &outs);
 

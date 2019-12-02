@@ -966,27 +966,34 @@ main(int argc, char *argv[])
                     /* show the alias if configured */
                     if (get_names_flag && strlen(interfaces[i].name)) {
                         addstr(&out, ", %s", interfaces[i].name);
-                        addstr(&perf, "%s is down", interfaces[i].name);
+                        addstr(&perf, "%s", interfaces[i].name);
                     } else {
                         addstr(&out, ", %s", interfaces[i].descr);
-                        addstr(&perf, "%s is down", interfaces[i].descr);
-                    }
-                    if (interfaces[i].err_disable)
-                        addstr(&perf, " (errdisable)");
+                        addstr(&perf, "%s", interfaces[i].descr);
+                    }                   
                     if (!interfaces[i].admin_down) {
-                        if (get_aliases_flag && strlen(interfaces[i].alias))
+                        if (get_aliases_flag && strlen(interfaces[i].alias)) {
                             addstr(&out, " (%s) down", interfaces[i].alias);
-                        else
+                            addstr(&perf, " (%s) down", interfaces[i].alias);
+                        } else {
                             addstr(&out, " down");
-                        if (interfaces[i].err_disable)
+                            addstr(&perf, " down");
+                        }
+                        if (interfaces[i].err_disable) {
                             addstr(&out, " (errdisable)");
+                            addstr(&perf, " (errdisable)");
+                        }
                     }
                 } else {
                     addstr(&perf, "[OK] ");
                     if (get_names_flag && strlen(interfaces[i].name))
-                        addstr(&perf, "%s is down", interfaces[i].name);
+                        addstr(&perf, "%s", interfaces[i].name);
                     else
-                        addstr(&perf, "%s is down", interfaces[i].descr);
+                        addstr(&perf, "%s", interfaces[i].descr);
+                    if (get_aliases_flag && strlen(interfaces[i].alias))
+                        addstr(&perf, " (%s) down", interfaces[i].alias);
+                    else
+                        addstr(&perf, " down");
                 }
             } else if (interfaces[i].admin_down && print_all_flag) {
                 addstr(&perf, "[OK] %s is down (administrative down)",
@@ -1056,9 +1063,13 @@ main(int argc, char *argv[])
                     addstr(&perf, "[WARNING]");
 
                 if (get_names_flag && strlen(interfaces[i].name))
-                    addstr(&perf, " %s is up", interfaces[i].name);
+                    addstr(&perf, " %s", interfaces[i].name);
                 else
-                    addstr(&perf, " %s is up", interfaces[i].descr);
+                    addstr(&perf, " %s", interfaces[i].descr);
+                if (get_aliases_flag && strlen(interfaces[i].alias))
+                    addstr(&perf, " (%s) is up", interfaces[i].alias);
+                else
+                    addstr(&perf, " is up");
             }
             if (lastcheck && (interfaces[i].speed || speed) && (inbitps > 0ULL || outbitps > 0ULL) && !interfaces[i].admin_down) {
                 gauge_to_si(inbitps, &ins);

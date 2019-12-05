@@ -1093,7 +1093,7 @@ main(int argc, char *argv[])
         printf("OK:");
     
     printf(" %d interface%s found", ifNumber, (count==1)?"":"s");
-    if(list) printf(", of which %d matched the regex. ", count)
+    if(list) printf(", of which %d matched the regex. ", count);
 
 
     /* now print performance data */

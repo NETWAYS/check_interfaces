@@ -996,8 +996,11 @@ main(int argc, char *argv[])
                         addstr(&perf, " down");
                 }
             } else if (interfaces[i].admin_down && print_all_flag) {
-                addstr(&perf, "[OK] %s is down (administrative down)",
-                (get_names_flag && strlen(interfaces[i].name)) ? interfaces[i].name : interfaces[i].descr);
+                addstr(&perf, "[OK] %s", (get_names_flag && strlen(interfaces[i].name)) ? interfaces[i].name : interfaces[i].descr);
+                if (get_aliases_flag && strlen(interfaces[i].alias))
+                    addstr(&perf, " (%s) is down (administrative down)", interfaces[i].alias);
+                else
+                    addstr(&perf, " is down (administrative down)");
             }
 
             /* check if errors on the interface are increasing faster than our defined value */

@@ -1003,8 +1003,9 @@ main(int argc, char *argv[])
                     addstr(&perf, " is down (administrative down)");
             }
 
+ 
             /* check if errors on the interface are increasing faster than our defined value */
-            else if (oldperfdata[i].inErrors && oldperfdata[i].outErrors &&
+            else if ((oldperfdata[i].inErrors || oldperfdata[i].outErrors) &&
                 (interfaces[i].inErrors > (oldperfdata[i].inErrors + (unsigned long) err_tolerance)
                 || interfaces[i].outErrors > (oldperfdata[i].outErrors + (unsigned long) coll_tolerance))
                 ) {
@@ -1022,12 +1023,12 @@ main(int argc, char *argv[])
                     /* if we are not in cisco mode simply use "errors" */
 
                     if (mode != CISCO)
-                        addstr(&perf, " errors");
+                        addstr(&perf, " errors\n");
                     else {
                          if (interfaces[i].inErrors > (oldperfdata[i].inErrors + (unsigned long) err_tolerance))
-                              addstr(&perf, " CRC errors");
+                              addstr(&perf, " %lu CRC errors since last check\n", interfaces[i].inErrors - oldperfdata[i].inErrors);
                          if (interfaces[i].outErrors > (oldperfdata[i].outErrors + (unsigned long) coll_tolerance))
-                              addstr(&perf, " collisions");
+                              addstr(&perf, " %lu collisions since last check\n", interfaces[i].outErrors - oldperfdata[i].outErrors);
                     }
                     if (get_names_flag && strlen(interfaces[i].name))
                         addstr(&out, ", %s has %lu errors", interfaces[i].name,
@@ -1036,10 +1037,9 @@ main(int argc, char *argv[])
                         addstr(&out, ", %s has %lu errors", interfaces[i].descr,
                             (interfaces[i].inErrors + interfaces[i].outErrors - oldperfdata[i].inErrors - oldperfdata[i].outErrors));
                     warnflag++;
-                    warn++;
+                    //warn++;
                 }
             }
-
 
             if (lastcheck && (interfaces[i].speed || speed) && !interfaces[i].admin_down) {
                 inbitps = (subtract64(interfaces[i].inOctets, oldperfdata[i].inOctets) / (u64)lastcheck) * 8ULL;

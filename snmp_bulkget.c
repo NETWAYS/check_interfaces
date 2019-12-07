@@ -93,6 +93,7 @@ int     mode = DEFAULT;
 /* uptime counter */
 unsigned int uptime = 0, sleep_usecs = 0;
 unsigned int lastcheck = 0;
+unsigned int parsed_lastcheck = 0;
 unsigned long global_timeout = DFLT_TIMEOUT;
 
 static
@@ -941,19 +942,18 @@ main(int argc, char *argv[])
     /* calculate time taken, print perfdata */
 
     gettimeofday(&tv, &tz);
-    if (lastcheck) lastcheck=(starttime - lastcheck);
 
     /* do not use old perfdata if the device has been reset recently
      * Note that a switch will typically rollover the uptime counter every 497 days
      * which is infrequent enough to not bother about :-)
      * UPTIME_TOLERANCE_IN_SECS doesn't need to be a big number
      */
-    if ((lastcheck + UPTIME_TOLERANCE_IN_SECS) > uptime)
-        lastcheck = 0;
 
-    if (oldperfdatap && lastcheck && oldperfdatap[0])
-        parse_perfdata(oldperfdatap, oldperfdata, prefix);
+    if (oldperfdatap && oldperfdatap[0] && ((lastcheck + UPTIME_TOLERANCE_IN_SECS) < uptime))
+        parse_perfdata(oldperfdatap, oldperfdata, prefix, &parsed_lastcheck);
 
+    if (lastcheck) lastcheck=(starttime - lastcheck);
+    else if (parsed_lastcheck) lastcheck=(starttime - parsed_lastcheck);
 
     for (i=0;i<ifNumber;i++)  {
         if (interfaces[i].descr && !interfaces[i].ignore) {
@@ -1102,7 +1102,7 @@ main(int argc, char *argv[])
     /* now print performance data */
 
 
-    printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf", (int)out.len, out.text, (count - ignore_count), (((long double)tv.tv_sec + ((long double)tv.tv_usec/1000000)) - starttime ));
+    printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf checktime=%ld", (int)out.len, out.text, (count - ignore_count), (((long double)tv.tv_sec + ((long double)tv.tv_usec/1000000)) - starttime ), tv.tv_sec);
     if (uptime)
             printf(" %sdevice::check_snmp::uptime=%us", prefix?prefix:"", uptime);
 
@@ -1372,7 +1372,7 @@ int usage(char *progname)
  *
  * e.g.  interfaces::check_multi::plugins=2 time=0.07 11::check_snmp::inOctets=53273084427c outOctets=6370502528c inDiscards=0c outDiscards=3921c inErrors=3c outErrors=20165c inUcast=38550136c outUcast=21655535c speed=100000000 21::check_snmp::inOctets=5627677780c outOctets=15023959911c inDiscards=0c outDiscards=0c inErrors=0c outErrors=5431c inUcast=34020897c outUcast=35875426c speed=1000000000
  */
-int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata, char *prefix)
+int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata, char *prefix, unsigned int *parsed_lastcheck)
 {
     char *last=0, *last2=0, *word, *interface=0, *var;
     char *ptr;
@@ -1392,6 +1392,15 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata, char *prefi
             /* check multi perfdata found */
             plugins = strtol(strchr(word, '=') + 1, NULL, 10);
             fprintf(stderr, "Found %d plugins\n", plugins);
+#endif
+            continue;
+        }
+		
+		if((ptr = strstr(word, "checktime="))) {
+            /* last checktime found */
+            *parsed_lastcheck = strtol(strchr(word, '=') + 1, NULL, 10);
+#ifdef DEBUG
+            fprintf(stderr, "Found last checktime: %d\n", *parsed_lastcheck);
 #endif
             continue;
         }

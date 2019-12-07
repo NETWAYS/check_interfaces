@@ -176,7 +176,7 @@ u64 subtract64(u64, u64);
 netsnmp_session *start_session(netsnmp_session *, char *, char *);
 netsnmp_session *start_session_v3(netsnmp_session *, char *, char *, char *, char *, char *, char *);
 int usage(char *);
-int parse_perfdata(char *, struct ifStruct *, char *);
+int parse_perfdata(char *, struct ifStruct *, char *, unsigned int *);
 void set_value(struct ifStruct *, char *, char *, u64, char *);
 int parseoids(int, char *, struct OIDStruct *);
 int create_request(netsnmp_session *, struct OIDStruct **, char **, int, netsnmp_pdu **);

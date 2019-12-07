@@ -159,7 +159,6 @@ main(int argc, char *argv[])
     int opt;
 
     double inload = 0,outload = 0;
-    u64 inbitps = 0,outbitps = 0;
     char *ins, *outs;
 
     char outstr[MAX_STRING];
@@ -943,17 +942,19 @@ main(int argc, char *argv[])
 
     gettimeofday(&tv, &tz);
 
+    if (oldperfdatap && oldperfdatap[0])
+        parse_perfdata(oldperfdatap, oldperfdata, prefix, &parsed_lastcheck);
+
+    if (lastcheck) lastcheck=(starttime - lastcheck);
+    else if (parsed_lastcheck) lastcheck=(starttime - parsed_lastcheck);
+	
     /* do not use old perfdata if the device has been reset recently
      * Note that a switch will typically rollover the uptime counter every 497 days
      * which is infrequent enough to not bother about :-)
      * UPTIME_TOLERANCE_IN_SECS doesn't need to be a big number
      */
-
-    if (oldperfdatap && oldperfdatap[0] && ((lastcheck + UPTIME_TOLERANCE_IN_SECS) < uptime))
-        parse_perfdata(oldperfdatap, oldperfdata, prefix, &parsed_lastcheck);
-
-    if (lastcheck) lastcheck=(starttime - lastcheck);
-    else if (parsed_lastcheck) lastcheck=(starttime - parsed_lastcheck);
+    if ((lastcheck + UPTIME_TOLERANCE_IN_SECS) > uptime)
+        lastcheck = 0;
 
     for (i=0;i<ifNumber;i++)  {
         if (interfaces[i].descr && !interfaces[i].ignore) {
@@ -1037,20 +1038,20 @@ main(int argc, char *argv[])
                         addstr(&out, ", %s has %lu errors", interfaces[i].descr,
                             (interfaces[i].inErrors + interfaces[i].outErrors - oldperfdata[i].inErrors - oldperfdata[i].outErrors));
                     warnflag++;
-                    //warn++;
+                    //warn++; /* if you uncomment this you will get 2 rows with [warning] */
                 }
             }
 
             if (lastcheck && (interfaces[i].speed || speed) && !interfaces[i].admin_down) {
-                inbitps = (subtract64(interfaces[i].inOctets, oldperfdata[i].inOctets) / (u64)lastcheck) * 8ULL;
-                outbitps = (subtract64(interfaces[i].outOctets, oldperfdata[i].outOctets) / (u64)lastcheck) * 8ULL;
+                interfaces[i].inbitps = (subtract64(interfaces[i].inOctets, oldperfdata[i].inOctets) / (u64)lastcheck) * 8ULL;
+                interfaces[i].outbitps = (subtract64(interfaces[i].outOctets, oldperfdata[i].outOctets) / (u64)lastcheck) * 8ULL;
                 if (speed) {
-                    inload = (long double)inbitps / ((long double)speed/100L);
-                    outload = (long double)outbitps / ((long double)speed/100L);
+                    inload = (long double)interfaces[i].inbitps / ((long double)speed/100L);
+                    outload = (long double)interfaces[i].outbitps / ((long double)speed/100L);
                 } else {
                     /* use the interface speed if a speed is not given */
-                    inload = (long double)inbitps / ((long double)interfaces[i].speed/100L);
-                    outload = (long double)outbitps / ((long double)interfaces[i].speed/100L);
+                    inload = (long double)interfaces[i].inbitps / ((long double)interfaces[i].speed/100L);
+                    outload = (long double)interfaces[i].outbitps / ((long double)interfaces[i].speed/100L);
                 }
 
                 if ( (bw > 0) && ((int)inload > bw || (int)outload > bw)) {
@@ -1074,9 +1075,9 @@ main(int argc, char *argv[])
                 else
                     addstr(&perf, " is up");
             }
-            if (lastcheck && (interfaces[i].speed || speed) && (inbitps > 0ULL || outbitps > 0ULL) && !interfaces[i].admin_down) {
-                gauge_to_si(inbitps, &ins);
-                gauge_to_si(outbitps, &outs);
+            if (lastcheck && (interfaces[i].speed || speed) && (interfaces[i].inbitps > 0ULL || interfaces[i].outbitps > 0ULL) && !interfaces[i].admin_down) {
+                gauge_to_si(interfaces[i].inbitps, &ins);
+                gauge_to_si(interfaces[i].outbitps, &outs);
 
                 addstr(&perf, "   %sbps(%0.2f%%)/%sbps(%0.2f%%)", ins, inload, outs, outload);
                 free(ins);
@@ -1095,14 +1096,14 @@ main(int argc, char *argv[])
     else
         printf("OK:");
     
-    printf(" %d interface%s found", ifNumber, (count==1)?"":"s");
+    printf(" %d interface%s found", ifNumber, (ifNumber==1)?"":"s");
     if(list) printf(", of which %d matched the regex. ", count);
 
 
     /* now print performance data */
 
 
-    printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf checktime=%ld", (int)out.len, out.text, (count - ignore_count), (((long double)tv.tv_sec + ((long double)tv.tv_usec/1000000)) - starttime ), tv.tv_sec);
+    printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf checktime=%ld", (int)out.len, out.text, count, (((long double)tv.tv_sec + ((long double)tv.tv_usec/1000000)) - starttime ), tv.tv_sec);
     if (uptime)
             printf(" %sdevice::check_snmp::uptime=%us", prefix?prefix:"", uptime);
 
@@ -1117,6 +1118,7 @@ main(int argc, char *argv[])
                 printf(" %s=%llu", if_vars[8], speed);
             else
                 printf(" %s=%llu", if_vars[8], interfaces[i].speed);
+            printf(" %s=%llub %s=%llub", if_vars[9], interfaces[i].inbitps, if_vars[10], interfaces[i].outbitps);
         }
     }
     printf("\n%*s", (int)perf.len, perf.text);
@@ -1480,6 +1482,10 @@ void set_value(struct ifStruct *oldperfdata, char *interface, char *var, u64 val
                 oldperfdata[i].outUcast = value;
             else if (strcmp(var, if_vars[8]) == 0)
                 oldperfdata[i].speed = value;
+			else if (strcmp(var, if_vars[9]) == 0)
+                oldperfdata[i].inbitps = value;
+			else if (strcmp(var, if_vars[10]) == 0)
+                oldperfdata[i].outbitps = value;
 
             continue;
         }

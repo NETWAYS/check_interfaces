@@ -59,6 +59,8 @@ struct ifStruct {
     unsigned long   inUcast;
     unsigned long   outUcast;
     u64     speed;
+    u64     inbitps;
+    u64     outbitps;
 };
 
 struct OIDStruct {
@@ -81,7 +83,9 @@ static char *if_vars_default[] = {
             "outErrors",
             "inUcast",
             "outUcast",
-            "speed" };
+            "speed", 
+            "inBitps",
+            "outBitps" };
 
 static char *if_vars_cisco[] = {
             "inOctets",
@@ -92,7 +96,9 @@ static char *if_vars_cisco[] = {
             "outCollisions",
             "inUcast",
             "outUcast",
-            "speed" };
+            "speed", 
+            "inBitps",
+            "outBitps" };
 
 
 

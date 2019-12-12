@@ -612,11 +612,11 @@ main(int argc, char *argv[])
 
     /* we should have all interface descriptions in our array */
 
-    /* If we want to match the regex on the alias, we get the aliases now.
+    /* If we want to match the regex with the aliases, we have to get them now.
      * this allows us later to only request the interface counters of the desired interfaces.
      */
 
-    if (match_aliases_flag) {
+    if (match_aliases_flag && list) {
         lastifflag = 0;
         count = 0;
         /* allocate the space for the alias OIDs */
@@ -731,7 +731,7 @@ main(int argc, char *argv[])
 
     /* TODO: This is just a slightly changed copy from above. I think it could be solved better (i.e. by putting it into a function) but it works this way :-) */
 
-    if (get_names_flag) {
+    if (get_names_flag && list) {
         lastifflag = 0;
         count = 0;
         /* allocate the space for the names OIDs */

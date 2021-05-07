@@ -610,7 +610,7 @@ main(int argc, char *argv[])
 
     /* now optionally fetch the interface aliases */
 
-    if (match_aliases_flag) {
+    if (get_aliases_flag) {
         lastifflag = 0;
         count = 0;
         /* allocate the space for the alias OIDs */

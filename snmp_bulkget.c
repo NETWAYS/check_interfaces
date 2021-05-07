@@ -891,18 +891,18 @@ main(int argc, char *argv[])
             /* When --if-name is set ignore descr in favor of name, else use old behaviour */
             if (get_names_flag)
                 status =  !regexec(&re, interfaces[i].name, (size_t) 0, NULL, 0) ||
-                           (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+                           (match_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
             else
                 status =  !regexec(&re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
-                          (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+                          (match_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
             status2 = 0;
             if (status && exclude_list) {
                 if (get_names_flag)
                     status2 = !regexec(&exclude_re, interfaces[i].name, (size_t) 0, NULL, 0) ||
-                              (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+                              (match_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
                 else
                     status2 = !regexec(&exclude_re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
-                              (get_aliases_flag && !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+                              (match_aliases_flag && !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0)));
             } if (status && !status2) {
                 count++;
 #ifdef DEBUG

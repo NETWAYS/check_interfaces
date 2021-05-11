@@ -917,7 +917,7 @@ main(int argc, char *argv[])
             } if (status && !status2) {
                 count++;
 #ifdef DEBUG
-                fprintf(stderr, "Interface %d (%s) matched\n", interfaces[i].index, interfaces[i].descr);
+                fprintf(stderr, "Interface %d - name=\"%s\", desc=\"%s\", alias=\"%s\" - matched\n", interfaces[i].index, interfaces[i].name, interfaces[i].descr, interfaces[i].alias);
 #endif
             } else
                 interfaces[i].ignore = 1;

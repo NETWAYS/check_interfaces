@@ -461,7 +461,7 @@ main(int argc, char *argv[])
         }
 
 #ifdef DEBUG
-        implode_result = implode(", ", oid_ifp + count);
+        implode_result = implode(", ", oid_ifp + count + 100);
         benchmark_start("Send SNMP request for OIDs: %s", implode_result);
 #endif
         /* send the request */
@@ -640,7 +640,7 @@ main(int argc, char *argv[])
             }
 
 #ifdef DEBUG
-            implode_result = implode(", ", oid_aliasp + count);
+            implode_result = implode(", ", oid_aliasp + count + 100);
             benchmark_start("Send SNMP request for OIDs: %s", implode_result);
 #endif
             /* send the request */

@@ -74,6 +74,7 @@ make install
         --timeout       sets the SNMP timeout (in ms)
      -m|--mode          special operating mode (default,cisco,nonbulk,bintec)
                             Workarounds for various hardware
+        --aliases-only  only test the Alias against the Regexes
 
 
 ### Modes

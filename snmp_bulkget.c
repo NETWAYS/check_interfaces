@@ -126,6 +126,7 @@ main(int argc, char *argv[])
     int     crit_on_down_flag = 1;
     int     get_aliases_flag = 0;
     int     match_aliases_flag = 0;
+    int     match_aliases_only_flag = 0;
     int     get_names_flag = 0;
     int     print_all_flag = 0;
     int     err_tolerance = 50;
@@ -227,6 +228,7 @@ main(int argc, char *argv[])
         {"sleep",       required_argument,  NULL,   3},
         {"retries",     required_argument,  NULL,   4},
         {"max-repetitions", required_argument, NULL, 5},
+        {"aliases-only", no_argument, NULL, 6},
         {NULL,          0,                  NULL,   0}
     };
 
@@ -331,6 +333,10 @@ main(int argc, char *argv[])
                 break;
             case 5:
                 pdu_max_repetitions = strtol(optarg, NULL, 10);
+                break;
+            case 6:
+                get_aliases_flag = 1; /* we need to see what we have matched... */
+                match_aliases_only_flag = 1;
                 break;
             case '?':
             default:
@@ -610,7 +616,7 @@ main(int argc, char *argv[])
 
     /* now optionally fetch the interface aliases */
 
-    if (match_aliases_flag) {
+    if (match_aliases_flag || match_aliases_only_flag) {
         lastifflag = 0;
         count = 0;
         /* allocate the space for the alias OIDs */
@@ -888,8 +894,11 @@ main(int argc, char *argv[])
 
         count = 0;
         for (i=0; i < ifNumber; i++) {
+            /* When --aliases-only is set check only alias */
+            if (match_aliases_only_flag)
+                status = !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0));
             /* When --if-name is set ignore descr in favor of name, else use old behaviour */
-            if (get_names_flag)
+            else if (get_names_flag)
                 status =  !regexec(&re, interfaces[i].name, (size_t) 0, NULL, 0) ||
                            (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
             else
@@ -897,9 +906,11 @@ main(int argc, char *argv[])
                           (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
             status2 = 0;
             if (status && exclude_list) {
-                if (get_names_flag)
+                if (match_aliases_only_flag)
+                    status2 = !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0));
+                else if (get_names_flag)
                     status2 = !regexec(&exclude_re, interfaces[i].name, (size_t) 0, NULL, 0) ||
-                              (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+                              (get_aliases_flag && !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0)));
                 else
                     status2 = !regexec(&exclude_re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
                               (get_aliases_flag && !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0)));
@@ -1353,7 +1364,8 @@ int usage(char *progname)
     printf("    --timeout\t\tsets the SNMP timeout (in ms)\n");
     printf("    --sleep\t\tsleep between every SNMP query (in ms)\n");
     printf("    --retries\t\thow often to retry before giving up\n");
-    printf("    --max-repetitions\t\tsee <http://www.net-snmp.org/docs/man/snmpbulkwalk.html>\n");
+    printf("    --max-repetitions\tsee <http://www.net-snmp.org/docs/man/snmpbulkwalk.html>\n");
+    printf("    --aliases-only\tmatch only against aliases (Option -a automatically enabled)\n");
     printf("\n");
     return 3;
 }

@@ -541,8 +541,20 @@ main(int argc, char *argv[])
                     vars = vars->next_variable;
                 }
 
-                interfaces = (struct ifStruct*)calloc((size_t)ifNumber, sizeof(struct ifStruct));
-                oldperfdata = (struct ifStruct*)calloc((size_t)ifNumber, sizeof(struct ifStruct));
+                /* SNMP request result for ifNumber is not always reliable working. 
+                   Sometimes it reports a wrong amount, which can lead to segfaults 
+                   (not enough memory allocated for varaibles interfaces/oldperfdata).
+                   That's why we should count the real amount of interface entries. */
+                int ifCount = 0;
+                netsnmp_variable_list *tmpvars;
+                for (tmpvars = vars; tmpvars; tmpvars = tmpvars->next_variable) {
+                    if (tmpvars->type == ASN_OCTET_STR) ifCount++;
+                    if ((tmpvars->name_length < OIDp[2].name_len) || (memcmp(OIDp[2].name, tmpvars->name, (tmpvars->name_length - 1) * sizeof(oid)))) break;
+                }
+                ifCount = (ifCount > ifNumber) ? ifCount : ifNumber;
+		
+                interfaces = (struct ifStruct*)calloc((size_t)ifCount, sizeof(struct ifStruct));
+                oldperfdata = (struct ifStruct*)calloc((size_t)ifCount, sizeof(struct ifStruct));
 
 #ifdef DEBUG
                 fprintf(stderr, "got %d interfaces\n", ifNumber);
@@ -589,7 +601,7 @@ main(int argc, char *argv[])
                 }
             }
 
-            if (count < ifNumber) {
+            if (count != ifNumber) {
                 if (lastifflag)
                 {
 #ifdef DEBUG

@@ -119,6 +119,7 @@ main(int argc, char *argv[])
     netsnmp_variable_list *vars;
     int     status, status2;
     int     count = 0; /* used for: the number of interfaces we receive, the number of regex matches */
+    int     loopCount = 0;
     int     i, j, k;
     int     errorflag = 0;
     int     warnflag = 0;
@@ -499,7 +500,7 @@ main(int argc, char *argv[])
         }
 
 #ifdef DEBUG
-        implode_result = implode(", ", oid_ifp + count + 100);
+        implode_result = implode(", ", oid_ifp + loopCount);
         benchmark_start("Send SNMP request for OIDs: %s", implode_result);
 #endif
         /* send the request */
@@ -655,6 +656,8 @@ main(int argc, char *argv[])
             snmp_free_pdu(response);
             response = 0;
         }
+
+        loopCount++;
     }
 
     if (OIDp) {
@@ -669,6 +672,7 @@ main(int argc, char *argv[])
     if (match_aliases_flag || match_aliases_only_flag) {
         lastifflag = 0;
         count = 0;
+        loopCount = 0;
         /* allocate the space for the alias OIDs */
         OIDp = (struct OIDStruct *) calloc(1, sizeof(struct OIDStruct));
         while (lastifflag==0) {
@@ -690,7 +694,7 @@ main(int argc, char *argv[])
             }
 
 #ifdef DEBUG
-            implode_result = implode(", ", oid_aliasp + count + 100);
+            implode_result = implode(", ", oid_aliasp + loopCount);
             benchmark_start("Send SNMP request for OIDs: %s", implode_result);
 #endif
             /* send the request */
@@ -773,6 +777,8 @@ main(int argc, char *argv[])
                 snmp_free_pdu(response);
                 response = 0;
             }
+
+            loopCount++;
 
         }
     }

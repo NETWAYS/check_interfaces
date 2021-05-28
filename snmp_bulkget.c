@@ -85,6 +85,7 @@
 
 
 void create_pdu(int, char **, netsnmp_pdu **, struct OIDStruct **, int, long);
+void* realloc_zero(void*, size_t, size_t);
 
 
 /* hardware mode */
@@ -96,7 +97,7 @@ unsigned int lastcheck = 0;
 unsigned long global_timeout = DFLT_TIMEOUT;
 
 static
-int ifNumber = 0;
+int ifNumber = 0, ifCount = 0;
 
 #ifdef DEBUG
 static
@@ -116,7 +117,7 @@ main(int argc, char *argv[])
     netsnmp_pdu    *pdu;
     netsnmp_pdu *response;
 
-    netsnmp_variable_list *vars;
+    netsnmp_variable_list *vars, *vars2;
     int     status, status2;
     int     count = 0; /* used for: the number of interfaces we receive, the number of regex matches */
     int     loopCount = 0;
@@ -542,20 +543,8 @@ main(int argc, char *argv[])
                     vars = vars->next_variable;
                 }
 
-                /* SNMP request result for ifNumber is not always reliable working. 
-                   Sometimes it reports a wrong amount, which can lead to segfaults 
-                   (not enough memory allocated for varaibles interfaces/oldperfdata).
-                   That's why we should count the real amount of interface entries. */
-                int ifCount = 0;
-                netsnmp_variable_list *tmpvars;
-                for (tmpvars = vars; tmpvars; tmpvars = tmpvars->next_variable) {
-                    if (tmpvars->type == ASN_OCTET_STR) ifCount++;
-                    if ((tmpvars->name_length < OIDp[2].name_len) || (memcmp(OIDp[2].name, tmpvars->name, (tmpvars->name_length - 1) * sizeof(oid)))) break;
-                }
-                ifCount = (ifCount > ifNumber) ? ifCount : ifNumber;
-		
-                interfaces = (struct ifStruct*)calloc((size_t)ifCount, sizeof(struct ifStruct));
-                oldperfdata = (struct ifStruct*)calloc((size_t)ifCount, sizeof(struct ifStruct));
+                interfaces = (struct ifStruct*)calloc((size_t)ifNumber, sizeof(struct ifStruct));
+                oldperfdata = (struct ifStruct*)calloc((size_t)ifNumber, sizeof(struct ifStruct));
 
 #ifdef DEBUG
                 fprintf(stderr, "got %d interfaces\n", ifNumber);
@@ -564,6 +553,25 @@ main(int argc, char *argv[])
                 /* subsequent replies have no ifNumber */
             }
 
+            /* SNMP request result for ifNumber is not always reliable working. 
+               Sometimes it reports a wrong amount, which can lead to segfaults 
+               (not enough memory allocated for varaibles interfaces/oldperfdata).
+               That's why we should count the real amount of interface entries. */
+            for (vars2 = vars; vars2; vars2 = vars2->next_variable) {
+                if ((vars2->name_length < OIDp[2].name_len) || (memcmp(OIDp[2].name, vars2->name, (vars2->name_length - 1) * sizeof(oid)))) break;
+                if (vars2->type == ASN_OCTET_STR) ifCount++;
+            }
+
+            if (ifCount > ifNumber) {
+                size_t newSize =  (size_t)((ifCount + ifNumber) * sizeof(struct ifStruct));
+                size_t oldSize =  (size_t)(ifNumber * sizeof(struct ifStruct)); 
+                interfaces = realloc_zero(interfaces, oldSize, newSize);
+                oldperfdata = realloc_zero(oldperfdata, oldSize, newSize);
+#ifdef DEBUG
+                fprintf(stderr, "got %d additional interfaces\n", (ifCount - ifNumber));
+#endif
+                ifNumber = ifCount;
+            }
 
             for (vars = vars; vars; vars = vars->next_variable) {
                 /*
@@ -1686,4 +1694,14 @@ void create_pdu(int mode, char **oidlist, netsnmp_pdu **pdu, struct OIDStruct **
         parseoids(i, oidlist[i], *oids);
         snmp_add_null_var(*pdu, (*oids)[i].name, (*oids)[i].name_len);
     }
+}
+
+void* realloc_zero(void* pBuffer, size_t oldSize, size_t newSize) {
+    void* pNew = realloc(pBuffer, newSize);
+    if ( newSize > oldSize && pNew ) {
+        size_t diff = newSize - oldSize;
+        void* pStart = ((char*)pNew) + oldSize;
+        memset(pStart, 0, diff);
+    }
+    return pNew;
 }

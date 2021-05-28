@@ -85,6 +85,7 @@
 
 
 void create_pdu(int, char **, netsnmp_pdu **, struct OIDStruct **, int, long);
+void* realloc_zero(void*, size_t, size_t);
 
 
 /* hardware mode */
@@ -96,7 +97,7 @@ unsigned int lastcheck = 0;
 unsigned long global_timeout = DFLT_TIMEOUT;
 
 static
-int ifNumber = 0;
+int ifNumber = 0, ifCount = 0;
 
 #ifdef DEBUG
 static
@@ -116,9 +117,10 @@ main(int argc, char *argv[])
     netsnmp_pdu    *pdu;
     netsnmp_pdu *response;
 
-    netsnmp_variable_list *vars;
+    netsnmp_variable_list *vars, *vars2;
     int     status, status2;
     int     count = 0; /* used for: the number of interfaces we receive, the number of regex matches */
+    int     loopCount = 0;
     int     i, j, k;
     int     errorflag = 0;
     int     warnflag = 0;
@@ -126,6 +128,7 @@ main(int argc, char *argv[])
     int     crit_on_down_flag = 1;
     int     get_aliases_flag = 0;
     int     match_aliases_flag = 0;
+    int     match_aliases_only_flag = 0;
     int     get_names_flag = 0;
     int     print_all_flag = 0;
     int     err_tolerance = 50;
@@ -142,6 +145,8 @@ main(int argc, char *argv[])
     char *hostname=0, *community=0, *list=0, *oldperfdatap=0, *prefix = 0;
     char *user = 0, *auth_proto = 0, *auth_pass = 0, *priv_proto = 0, *priv_pass = 0;
     char *exclude_list = 0;
+    char *if_list = 0, *if_exclude_list = 0;
+    int  re_or_flag = 0, re_exclude_or_flag = 0;
 #ifdef INDEXES
     char *indexes=0;
 #endif /* INDEXES */
@@ -152,7 +157,7 @@ main(int argc, char *argv[])
     struct timeval tv;
     struct timezone tz;
     long double starttime;
-    regex_t re, exclude_re;
+    regex_t re, exclude_re, if_re, if_exclude_re;
     int ignore_count = 0;
     int trimdescr = 0;
     int opt;
@@ -227,6 +232,11 @@ main(int argc, char *argv[])
         {"sleep",       required_argument,  NULL,   3},
         {"retries",     required_argument,  NULL,   4},
         {"max-repetitions", required_argument, NULL, 5},
+        {"aliases-only", no_argument, NULL, 6},
+        {"if-regex",    required_argument, NULL, 7},
+        {"if-exclude-regex",    required_argument, NULL, 8},
+        {"regex-or", no_argument, NULL, 9},
+        {"exclude-regex-or", no_argument, NULL, 10},
         {NULL,          0,                  NULL,   0}
     };
 
@@ -332,6 +342,22 @@ main(int argc, char *argv[])
             case 5:
                 pdu_max_repetitions = strtol(optarg, NULL, 10);
                 break;
+            case 6:
+                get_aliases_flag = 1; /* we need to see what we have matched... */
+                match_aliases_only_flag = 1;
+                break;
+            case 7:
+                if_list = optarg;
+                break;
+            case 8:
+                if_exclude_list = optarg;
+                break;
+            case 9:
+                re_or_flag = 1;
+                break;
+            case 10:
+                re_exclude_or_flag = 1;
+                break;
             case '?':
             default:
                 exit(usage(progname));
@@ -369,6 +395,10 @@ main(int argc, char *argv[])
         /* use .* as the default regex */
         list = ".*";
 
+    if (if_exclude_list && !if_list)
+        /* use .* as the default regex */
+        if_list = ".*";
+
     /* get the start time */
     gettimeofday(&tv, &tz);
     starttime=(long double)tv.tv_sec + (((long double)tv.tv_usec)/1000000);
@@ -377,14 +407,30 @@ main(int argc, char *argv[])
     if (list) {
         status = regcomp(&re, list, REG_ICASE|REG_EXTENDED|REG_NOSUB);
         if (status != 0) {
-            printf("Error creating regex\n");
+            printf("Error creating regex (--regex)\n");
             exit (3);
         }
 
         if (exclude_list) {
             status = regcomp(&exclude_re, exclude_list, REG_ICASE|REG_EXTENDED|REG_NOSUB);
             if (status != 0) {
-                printf("Error creating exclusion regex\n");
+                printf("Error creating exclusion regex (--exclude-regex)\n");
+                exit (3);
+            }
+        }
+    }
+
+    if (if_list) {
+        status = regcomp(&if_re, if_list, REG_ICASE|REG_EXTENDED|REG_NOSUB);
+        if (status != 0) {
+            printf("Error creating interface regex (--if-regex)\n");
+            exit (3);
+        }
+	
+        if (if_exclude_list) {
+            status = regcomp(&if_exclude_re, if_exclude_list, REG_ICASE|REG_EXTENDED|REG_NOSUB);
+            if (status != 0) {
+                printf("Error creating interface exclusion regex (--if-exclude-regex)\n");
                 exit (3);
             }
         }
@@ -455,7 +501,7 @@ main(int argc, char *argv[])
         }
 
 #ifdef DEBUG
-        implode_result = implode(", ", oid_ifp + count);
+        implode_result = implode(", ", oid_ifp + loopCount);
         benchmark_start("Send SNMP request for OIDs: %s", implode_result);
 #endif
         /* send the request */
@@ -507,6 +553,25 @@ main(int argc, char *argv[])
                 /* subsequent replies have no ifNumber */
             }
 
+            /* SNMP request result for ifNumber is not always reliable working. 
+               Sometimes it reports a wrong amount, which can lead to segfaults 
+               (not enough memory allocated for varaibles interfaces/oldperfdata).
+               That's why we should count the real amount of interface entries. */
+            for (vars2 = vars; vars2; vars2 = vars2->next_variable) {
+                if ((vars2->name_length < OIDp[2].name_len) || (memcmp(OIDp[2].name, vars2->name, (vars2->name_length - 1) * sizeof(oid)))) break;
+                if (vars2->type == ASN_OCTET_STR) ifCount++;
+            }
+
+            if (ifCount > ifNumber) {
+                size_t newSize =  (size_t)((ifCount + ifNumber) * sizeof(struct ifStruct));
+                size_t oldSize =  (size_t)(ifNumber * sizeof(struct ifStruct)); 
+                interfaces = realloc_zero(interfaces, oldSize, newSize);
+                oldperfdata = realloc_zero(oldperfdata, oldSize, newSize);
+#ifdef DEBUG
+                fprintf(stderr, "got %d additional interfaces\n", (ifCount - ifNumber));
+#endif
+                ifNumber = ifCount;
+            }
 
             for (vars = vars; vars; vars = vars->next_variable) {
                 /*
@@ -599,6 +664,8 @@ main(int argc, char *argv[])
             snmp_free_pdu(response);
             response = 0;
         }
+
+        loopCount++;
     }
 
     if (OIDp) {
@@ -610,9 +677,10 @@ main(int argc, char *argv[])
 
     /* now optionally fetch the interface aliases */
 
-    if (match_aliases_flag) {
+    if (match_aliases_flag || match_aliases_only_flag) {
         lastifflag = 0;
         count = 0;
+        loopCount = 0;
         /* allocate the space for the alias OIDs */
         OIDp = (struct OIDStruct *) calloc(1, sizeof(struct OIDStruct));
         while (lastifflag==0) {
@@ -634,7 +702,7 @@ main(int argc, char *argv[])
             }
 
 #ifdef DEBUG
-            implode_result = implode(", ", oid_aliasp + count);
+            implode_result = implode(", ", oid_aliasp + loopCount);
             benchmark_start("Send SNMP request for OIDs: %s", implode_result);
 #endif
             /* send the request */
@@ -717,6 +785,8 @@ main(int argc, char *argv[])
                 snmp_free_pdu(response);
                 response = 0;
             }
+
+            loopCount++;
 
         }
     }
@@ -878,7 +948,7 @@ main(int argc, char *argv[])
         }
     }
 
-    if (list) {
+    if (list || if_list) {
         /*
          * a regex was given so we will go through our array
          * and try and match it with what we received
@@ -888,33 +958,64 @@ main(int argc, char *argv[])
 
         count = 0;
         for (i=0; i < ifNumber; i++) {
-            /* When --if-name is set ignore descr in favor of name, else use old behaviour */
-            if (get_names_flag)
-                status =  !regexec(&re, interfaces[i].name, (size_t) 0, NULL, 0) ||
-                           (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
-            else
-                status =  !regexec(&re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
-                          (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
-            status2 = 0;
-            if (status && exclude_list) {
-                if (get_names_flag)
+            status = 1;
+            if (list) {
+	    	/* When --aliases-only is set check only alias */
+            	if (match_aliases_only_flag)
+            	    status = !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0));
+            	/* When --if-name is set ignore descr in favor of name, else use old behaviour */
+            	else if (get_names_flag)
+            	    status =  !regexec(&re, interfaces[i].name, (size_t) 0, NULL, 0) ||
+            	               (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+            	else
+            	    status =  !regexec(&re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
+            	              (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+            }
+	    
+	    /* Try --if-regex, if needed */
+            if (if_list && (!list || (status && !re_or_flag) || (!status && re_or_flag))) {
+	    	if (get_names_flag)
+            	    status =  !regexec(&if_re, interfaces[i].name, (size_t) 0, NULL, 0);
+            	else
+            	    status =  !regexec(&if_re, interfaces[i].descr, (size_t) 0, NULL, 0);
+            }
+
+	    status2 = 0;
+	    if (status && exclude_list) {
+                if (match_aliases_only_flag)
+                    status2 = !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0));
+                else if (get_names_flag)
                     status2 = !regexec(&exclude_re, interfaces[i].name, (size_t) 0, NULL, 0) ||
-                              (get_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+                              (get_aliases_flag && !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0)));
                 else
                     status2 = !regexec(&exclude_re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
                               (get_aliases_flag && !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0)));
-            } if (status && !status2) {
+            }
+
+	    /* Try --if-exclude-regex, if needed */
+	    if (if_exclude_list && status && (!exclude_list || (!status2 && re_exclude_or_flag) || (status2 && !re_exclude_or_flag))) {
+                if (get_names_flag)
+                    status2 = !regexec(&if_exclude_re, interfaces[i].name, (size_t) 0, NULL, 0);
+                else
+                    status2 = !regexec(&if_exclude_re, interfaces[i].descr, (size_t) 0, NULL, 0);
+            }	    
+
+	    if (status && !status2) {
                 count++;
 #ifdef DEBUG
-                fprintf(stderr, "Interface %d (%s) matched\n", interfaces[i].index, interfaces[i].descr);
+                fprintf(stderr, "Interface %d - name=\"%s\", desc=\"%s\", alias=\"%s\" - matched\n", interfaces[i].index, interfaces[i].name, interfaces[i].descr, interfaces[i].alias);
 #endif
             } else
                 interfaces[i].ignore = 1;
         }
         regfree(&re);
+        regfree(&if_re);
 
     if (exclude_list)
         regfree(&exclude_re);
+
+    if (if_exclude_list)
+        regfree(&if_exclude_re);
 
         if (count) {
 #ifdef DEBUG
@@ -1080,9 +1181,9 @@ main(int argc, char *argv[])
         printf("OK:");
 #ifdef DEBUG
     fprintf(stderr, " %d interfaces found", ifNumber);
-    if(list) printf(", of which %d matched the regex. ", count);
+    if(list || if_list) printf(", of which %d matched the regex. ", count);
 #else
-    if(list)
+    if(list || if_list)
         printf(" %d interface%s found", count, (count==1)?"":"s");
     else
         printf(" %d interface%s found", ifNumber, (ifNumber==1)?"":"s");
@@ -1347,13 +1448,18 @@ int usage(char *progname)
     printf(" -u|--user\t\tSNMPv3 User\n");
     printf(" -d|--down-is-ok\tdisables critical alerts for down interfaces\n");
     printf(" -a|--aliases\t\tretrieves the interface description\n");
-    printf(" -A|--match-aliases\talso match against aliases (Option -a automatically enabled)\n");
+    printf(" -A|--match-aliases\talso match  (--regex / --exclude-regex) against aliases (Option -a automatically enabled)\n");
     printf(" -D|--debug-print\tlist administrative down interfaces in perfdata\n");
     printf(" -N|--if-names\t\tuse ifName instead of ifDescr\n");
     printf("    --timeout\t\tsets the SNMP timeout (in ms)\n");
     printf("    --sleep\t\tsleep between every SNMP query (in ms)\n");
     printf("    --retries\t\thow often to retry before giving up\n");
-    printf("    --max-repetitions\t\tsee <http://www.net-snmp.org/docs/man/snmpbulkwalk.html>\n");
+    printf("    --max-repetitions\tsee <http://www.net-snmp.org/docs/man/snmpbulkwalk.html>\n");
+    printf("    --aliases-only\tmatch (--regex / --exclude-regex) only against aliases (Option -a automatically enabled)\n");
+    printf("    --if-regex\t\tregexp matching only ifDescr/ifName (works also with --aliases-only)\n");
+    printf("    --if-exclude-regex\tnegative regexp matching only ifDescr/ifName (works also with --aliases-only)\n");
+    printf("    --regex-or\t\tmatch both regexes --regex and --if-regex in an OR operation. So only one of them needs to match.\n");
+    printf("    --exclude-regex-or\tmatch both regexes --exclude-regex and --if-exclude-regex in an OR operation. So only one of them needs to match.\n");
     printf("\n");
     return 3;
 }
@@ -1588,4 +1694,14 @@ void create_pdu(int mode, char **oidlist, netsnmp_pdu **pdu, struct OIDStruct **
         parseoids(i, oidlist[i], *oids);
         snmp_add_null_var(*pdu, (*oids)[i].name, (*oids)[i].name_len);
     }
+}
+
+void* realloc_zero(void* pBuffer, size_t oldSize, size_t newSize) {
+    void* pNew = realloc(pBuffer, newSize);
+    if ( newSize > oldSize && pNew ) {
+        size_t diff = newSize - oldSize;
+        void* pStart = ((char*)pNew) + oldSize;
+        memset(pStart, 0, diff);
+    }
+    return pNew;
 }

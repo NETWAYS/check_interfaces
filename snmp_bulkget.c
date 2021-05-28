@@ -602,7 +602,7 @@ main(int argc, char *argv[])
                 }
             }
 
-            if (count != ifNumber) {
+            if (count < ifNumber) {
                 if (lastifflag)
                 {
 #ifdef DEBUG

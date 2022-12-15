@@ -1567,7 +1567,6 @@ int parseoids(int i, char *oid_list, struct OIDStruct *query)
 void create_pdu(int mode, char **oidlist, netsnmp_pdu **pdu, struct OIDStruct **oids, int nonrepeaters, long max)
 {
     int i;
-    //static char **oid_ifp;
 
     if (mode == NONBULK)
         *pdu = snmp_pdu_create(SNMP_MSG_GET);

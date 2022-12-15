@@ -18,6 +18,12 @@ apt-get update
 apt-get -y install git build-essential libsnmp-dev
 ```
 
+Example for RHEL 9:
+```
+dnf update
+dnf install perl-Net-SNMP net-snmp net-snmp-utils net-snmp-perl net-snmp-libs
+```
+
 Download and extract the tarball from https://github.com/NETWAYS/check_interfaces/releases
 
 ```
@@ -30,6 +36,11 @@ the configured path.
 ```
 make
 make install
+```
+
+Example recompilation of `snmp_bulkget.o` for RHEL 9 after `make`
+```
+gcc -o check_interfaces snmp_bulkget.o utils.o -lrt -Wl,-z,relro -Wl,--as-needed -Wl,-z,now  -lm -L/usr/lib64 -lnetsnmp -lm -lssl -lssl -lcrypto -lm -lnetsnmp -fPIE
 ```
 
 ### Usage

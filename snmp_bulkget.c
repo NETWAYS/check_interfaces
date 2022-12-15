@@ -1249,7 +1249,7 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user, char *au
             session->securityPrivProto = snmp_duplicate_objid(usmAESPrivProtocol, USM_PRIV_PROTO_AES_LEN);
             session->securityPrivProtoLen = USM_PRIV_PROTO_AES_LEN;
         } else if (!strcmp(priv_proto, "DES")) {
-            session->securityPrivProto = snmp_duplicate_objid(usmDESPrivProtocol, USM_PRIV_PROTO_DES_LEN);
+            session->securityPrivProto = snmp_duplicate_objid(usmAESPrivProtocol, USM_PRIV_PROTO_DES_LEN);
             session->securityPrivProtoLen = USM_PRIV_PROTO_DES_LEN;
         } else {
             printf("Unknown priv protocol %s\n", priv_proto);

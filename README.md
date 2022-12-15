@@ -20,7 +20,6 @@ apt-get -y install git build-essential libsnmp-dev
 
 Example for RHEL 9:
 ```
-dnf update
 dnf install perl-Net-SNMP net-snmp net-snmp-utils net-snmp-perl net-snmp-libs
 ```
 
@@ -33,14 +32,18 @@ Download and extract the tarball from https://github.com/NETWAYS/check_interface
 Running "make" should successfully compile the plugin, and "make install" will install them under
 the configured path.
 
+# Building under Debian:
 ```
 make
 make install
 ```
 
-Example recompilation of `snmp_bulkget.o` for RHEL 9 after `make`
+# Bulding under RHEL 9 might requre some recompilations and a) firstly generate the required object files via `make` b) recompile the `snmp_bulkget.o` run c) `make` and d) `make install` again:
 ```
-gcc -o check_interfaces snmp_bulkget.o utils.o -lrt -Wl,-z,relro -Wl,--as-needed -Wl,-z,now  -lm -L/usr/lib64 -lnetsnmp -lm -lssl -lssl -lcrypto -lm -lnetsnmp -fPIE
+make
+gcc -o check_interfaces snmp_bulkget.o utils.o -lrt -Wl,-z,relro -Wl,--as-needed -Wl,-z,now -fPIE -lm -L/usr/lib64 -lnetsnmp -lssl -lcrypto -lm -lnetsnmp
+make
+make install
 ```
 
 ### Usage

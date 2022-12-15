@@ -38,7 +38,8 @@ make
 make install
 ```
 
-# Bulding under RHEL 9 might requre some recompilations and a) firstly generate the required object files via `make` b) recompile the `snmp_bulkget.o` run c) `make` and d) `make install` again:
+# Bulding under RHEL 9 
+This might requre some recompilations and a) firstly generate the required object files via `make` b) recompile the `snmp_bulkget.o` run c) `make` and d) `make install` again:
 ```
 make
 gcc -o check_interfaces snmp_bulkget.o utils.o -lrt -Wl,-z,relro -Wl,--as-needed -Wl,-z,now -fPIE -lm -L/usr/lib64 -lnetsnmp -lssl -lcrypto -lm -lnetsnmp

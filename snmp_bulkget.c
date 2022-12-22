@@ -132,7 +132,7 @@ main(int argc, char *argv[])
     int     coll_tolerance = -1;
     u64     speed = 0;
     int     bw = 0;
-    size_t  size,size2;
+    size_t  size;
 
     struct ifStruct *interfaces = NULL; /* current interface data */
     struct ifStruct *oldperfdata = NULL; /* previous check interface data */
@@ -146,7 +146,7 @@ main(int argc, char *argv[])
     char *indexes=0;
 #endif /* INDEXES */
 #ifdef HAVE_GETADDRINFO
-    struct addrinfo *addr_list, *addr_listp;
+    struct addrinfo *addr_list;
 #endif /* HAVE_GETADDRINFO */
 
     struct timeval tv;
@@ -913,8 +913,8 @@ main(int argc, char *argv[])
         }
         regfree(&re);
 
-    if (exclude_list)
-        regfree(&exclude_re);
+    	if (exclude_list)
+            regfree(&exclude_re);
 
         if (count) {
 #ifdef DEBUG
@@ -923,9 +923,8 @@ main(int argc, char *argv[])
         } else {
             printf("- no interfaces matched regex");
             exit (0);
-        }
-
-    }
+       		 }
+   	 }
 
 
     /* let the user know about interfaces that are down (and subsequently ignored) */
@@ -1568,7 +1567,6 @@ int parseoids(int i, char *oid_list, struct OIDStruct *query)
 void create_pdu(int mode, char **oidlist, netsnmp_pdu **pdu, struct OIDStruct **oids, int nonrepeaters, long max)
 {
     int i;
-    static char **oid_ifp;
 
     if (mode == NONBULK)
         *pdu = snmp_pdu_create(SNMP_MSG_GET);

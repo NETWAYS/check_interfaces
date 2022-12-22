@@ -905,9 +905,9 @@ main(int argc, char *argv[])
                               (match_aliases_flag && !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0)));
             } if (status && !status2) {
                 count++;
-  #ifdef DEBUG
+#ifdef DEBUG
                 fprintf(stderr, "Interface %d (%s) matched\n", interfaces[i].index, interfaces[i].descr);
-  #endif
+#endif
             } else
                 interfaces[i].ignore = 1;
         }
@@ -917,9 +917,9 @@ main(int argc, char *argv[])
             regfree(&exclude_re);
 
         if (count) {
-  #ifdef DEBUG
+#ifdef DEBUG
             fprintf(stderr, "- %d interface%s found\n", count, (count==1)?"":"s");
-  #endif
+#endif
         } else {
             printf("- no interfaces matched regex");
             exit (0);

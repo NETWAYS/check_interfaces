@@ -1378,9 +1378,11 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user, char *au
         if (!strcmp(priv_proto, "AES")) {
             session->securityPrivProto = snmp_duplicate_objid(usmAESPrivProtocol, USM_PRIV_PROTO_AES_LEN);
             session->securityPrivProtoLen = USM_PRIV_PROTO_AES_LEN;
+#ifdef usmDESPrivProtocol
         } else if (!strcmp(priv_proto, "DES")) {
             session->securityPrivProto = snmp_duplicate_objid(usmDESPrivProtocol, USM_PRIV_PROTO_DES_LEN);
             session->securityPrivProtoLen = USM_PRIV_PROTO_DES_LEN;
+#endif
         } else {
             printf("Unknown priv protocol %s\n", priv_proto);
             exit(3);
@@ -1472,7 +1474,11 @@ int usage(char *progname)
 #endif /* INDEXES */
     printf(" -j|--auth-proto\tSNMPv3 Auth Protocol (SHA|MD5)\n");
     printf(" -J|--auth-phrase\tSNMPv3 Auth Phrase\n");
-    printf(" -k|--priv-proto\tSNMPv3 Privacy Protocol (AES|DES)\n");
+#ifdef usmDESPrivProtocol
+    printf(" -k|--priv-proto\tSNMPv3 Privacy Protocol (AES|DES), unset means not privacy protocol!\n");
+#else
+    printf(" -k|--priv-proto\tSNMPv3 Privacy Protocol (AES), unset means not privacy protocol!\n");
+#endif
     printf(" -K|--priv-phrase\tSNMPv3 Privacy Phrase\n");
     printf(" -u|--user\t\tSNMPv3 User\n");
     printf(" -d|--down-is-ok\tdisables critical alerts for down interfaces\n");

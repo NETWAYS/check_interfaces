@@ -93,6 +93,7 @@ int     mode = DEFAULT;
 /* uptime counter */
 unsigned int uptime = 0, sleep_usecs = 0;
 unsigned int lastcheck = 0;
+unsigned int parsed_lastcheck = 0;
 unsigned long global_timeout = DFLT_TIMEOUT;
 
 static
@@ -158,7 +159,6 @@ main(int argc, char *argv[])
     int opt;
 
     double inload = 0,outload = 0;
-    u64 inbitps = 0,outbitps = 0;
     char *ins, *outs;
 
     char outstr[MAX_STRING];
@@ -182,6 +182,7 @@ main(int argc, char *argv[])
     static char **oid_vals;
     static char **if_vars;
     static char **oid_aliasp;
+    static char **oid_namesp;
 
     oid_ifp = oid_if_bulkget;
     oid_vals = oid_vals_default;
@@ -410,14 +411,17 @@ main(int argc, char *argv[])
         oid_ifp = oid_if_get;
         size = (sizeof(oid_if_get) / sizeof(char *)) - 1;
         oid_aliasp = oid_alias_get;
+        oid_namesp = oid_names_get;
     } else if (mode == BINTEC) {
         oid_ifp = oid_if_bintec;
         size = (sizeof(oid_if_bintec) / sizeof(char *)) - 1;
         oid_aliasp = oid_alias_bintec;
+        oid_namesp = oid_names_bintec;
     } else {
         oid_ifp = oid_if_bulkget;
         size = (sizeof(oid_if_bulkget) / sizeof(char *)) - 1;
         oid_aliasp = oid_alias_bulkget;
+        oid_namesp = oid_names_bulkget;
     }
 
     /* allocate the space for the interface OIDs */
@@ -608,9 +612,11 @@ main(int argc, char *argv[])
 
     /* we should have all interface descriptions in our array */
 
-    /* now optionally fetch the interface aliases */
+    /* If we want to match the regex with the aliases, we have to get them now.
+     * this allows us later to only request the interface counters of the desired interfaces.
+     */
 
-    if (get_aliases_flag) {
+    if (match_aliases_flag && list) {
         lastifflag = 0;
         count = 0;
         /* allocate the space for the alias OIDs */
@@ -719,6 +725,170 @@ main(int argc, char *argv[])
             }
 
         }
+    }
+
+    /* If the get_names_flag is set, we also have to get the interface names so we can match the regex with them */
+
+    /* TODO: This is just a slightly changed copy from above. I think it could be solved better (i.e. by putting it into a function) but it works this way :-) */
+
+    if (get_names_flag && list) {
+        lastifflag = 0;
+        count = 0;
+        /* allocate the space for the names OIDs */
+        OIDp = (struct OIDStruct *) calloc(1, sizeof(struct OIDStruct));
+        while (lastifflag==0) {
+
+            /* build our request depending on the mode */
+            if (count==0)
+                create_pdu(mode, oid_namesp, &pdu, &OIDp, 0, ifNumber);
+            else {
+                /* we have not received all names in the preceding packet, so fetch the next lot */
+
+                if (mode == BINTEC || mode == NONBULK)
+                    pdu = snmp_pdu_create(SNMP_MSG_GETNEXT);
+                else {
+                    pdu = snmp_pdu_create(SNMP_MSG_GETBULK);
+                    pdu->non_repeaters = 0;
+                    pdu->max_repetitions = ifNumber - count;
+                }
+                snmp_add_null_var(pdu, lastOid.name, lastOid.name_len);
+            }
+
+#ifdef DEBUG
+            implode_result = implode(", ", oid_namesp + count);
+            benchmark_start("Send SNMP request for OIDs: %s", implode_result);
+#endif
+            /* send the request */
+            status = snmp_synch_response(ss, pdu, &response);
+#ifdef DEBUG
+            benchmark_end();
+            free(implode_result);
+#endif
+            if (sleep_usecs) usleep(sleep_usecs);
+
+            if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
+
+                vars = response->variables;
+
+                for (vars = vars; vars; vars = vars->next_variable) {
+                    /*
+                     * if the next OID is shorter
+                     * or if the next OID doesn't begin with our base OID
+                     * then we have reached the end of the table :-)
+                     * print_variable(vars->name, vars->name_length, vars);
+                     */
+
+                    /* save the OID in case we need additional packets */
+                    memcpy(lastOid.name, vars->name, (vars->name_length  * sizeof(oid)));
+                    lastOid.name_len = vars->name_length;
+
+                    if ((vars->name_length < OIDp[0].name_len) || (memcmp(OIDp[0].name, vars->name, (vars->name_length - 1) * sizeof(oid)))) {
+#ifdef DEBUG
+                        fprintf(stderr, "reached end of names\n");
+#endif
+                        lastifflag++;
+                        break;
+                    }
+
+                    /* now we fill our interfaces array with the names
+                     */
+                    if (vars->type == ASN_OCTET_STR) {
+                        i = (int) vars->name[(vars->name_length - 1)];
+                        if (i)  {
+                            MEMCPY(interfaces[count].name, vars->val.string, vars->val_len);
+                            TERMSTR(interfaces[count].name, vars->val_len);
+                        }
+                    }
+                    count++;
+                }
+
+                if (count < ifNumber) {
+                    if (lastifflag) {
+#ifdef DEBUG
+                        fprintf(stderr, "Device has %d interfaces but only has %d names\n", ifNumber, count);
+#endif
+                    } else {
+#ifdef DEBUG
+                        fprintf(stderr, "Sending another packet for names\n");
+#endif
+                    }
+                } else
+                    lastifflag++;
+            } else {
+                /*
+                 * FAILURE: print what went wrong!
+                 */
+
+                if (status == STAT_SUCCESS)
+                    printf("Error in packet\nReason: %s\n",
+                            snmp_errstring(response->errstat));
+                else if (status == STAT_TIMEOUT) {
+                    printf("Timeout while reading interface names from %s\n",
+                            session.peername);
+                    exit(EXITCODE_TIMEOUT);
+                } else
+                    snmp_sess_perror("snmp_bulkget", ss);
+                exit (2);
+            }
+            /*
+             * Clean up:
+             *   free the response.
+             */
+            if (response) {
+                snmp_free_pdu(response);
+                response = 0;
+            }
+
+        }
+    }
+
+    if (list) {
+        /*
+         * a regex was given so we will go through our array
+         * and try and match it with what we received
+         *
+         * count is the number of matches
+         */
+
+        count = 0;
+        for (i=0; i < ifNumber; i++) {
+            /* When --if-name is set ignore descr in favor of name, else use old behaviour */
+            if (get_names_flag)
+                status =  !regexec(&re, interfaces[i].name, (size_t) 0, NULL, 0) ||
+                           (match_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+            else
+                status =  !regexec(&re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
+                           (match_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+            status2 = 0;
+            if (status && exclude_list) {
+                if (get_names_flag)
+                    status2 = !regexec(&exclude_re, interfaces[i].name, (size_t) 0, NULL, 0) ||
+                              (match_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+                else
+                    status2 = !regexec(&exclude_re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
+                              (match_aliases_flag && !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+            } if (status && !status2) {
+                count++;
+#ifdef DEBUG
+                fprintf(stderr, "Interface %d (%s) matched\n", interfaces[i].index, interfaces[i].descr);
+#endif
+            } else
+                interfaces[i].ignore = 1;
+        }
+        regfree(&re);
+
+    if (exclude_list)
+        regfree(&exclude_re);
+
+        if (count) {
+#ifdef DEBUG
+            fprintf(stderr, "- %d interface%s found\n", count, (count==1)?"":"s");
+#endif
+        } else {
+            printf("- no interfaces matched regex");
+            exit (0);
+        }
+
     }
 
 
@@ -878,54 +1048,6 @@ main(int argc, char *argv[])
         }
     }
 
-    if (list) {
-        /*
-         * a regex was given so we will go through our array
-         * and try and match it with what we received
-         *
-         * count is the number of matches
-         */
-
-        count = 0;
-        for (i=0; i < ifNumber; i++) {
-            /* When --if-name is set ignore descr in favor of name, else use old behaviour */
-            if (get_names_flag)
-                status =  !regexec(&re, interfaces[i].name, (size_t) 0, NULL, 0) ||
-                           (match_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
-            else
-                status =  !regexec(&re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
-                          (match_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
-            status2 = 0;
-            if (status && exclude_list) {
-                if (get_names_flag)
-                    status2 = !regexec(&exclude_re, interfaces[i].name, (size_t) 0, NULL, 0) ||
-                              (match_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
-                else
-                    status2 = !regexec(&exclude_re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
-                              (match_aliases_flag && !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0)));
-            } if (status && !status2) {
-                count++;
-#ifdef DEBUG
-                fprintf(stderr, "Interface %d (%s) matched\n", interfaces[i].index, interfaces[i].descr);
-#endif
-            } else
-                interfaces[i].ignore = 1;
-        }
-        regfree(&re);
-
-    	if (exclude_list)
-            regfree(&exclude_re);
-
-        if (count) {
-#ifdef DEBUG
-            fprintf(stderr, "- %d interface%s found\n", count, (count==1)?"":"s");
-#endif
-        } else {
-            printf("- no interfaces matched regex");
-            exit (0);
-       		 }
-   	 }
-
 
     /* let the user know about interfaces that are down (and subsequently ignored) */
     if (ignore_count)
@@ -940,7 +1062,12 @@ main(int argc, char *argv[])
     /* calculate time taken, print perfdata */
 
     gettimeofday(&tv, &tz);
+
+    if (oldperfdatap && oldperfdatap[0])
+        parse_perfdata(oldperfdatap, oldperfdata, prefix, &parsed_lastcheck);
+
     if (lastcheck) lastcheck=(starttime - lastcheck);
+    else if (parsed_lastcheck) lastcheck=(starttime - parsed_lastcheck);
 
     /* do not use old perfdata if the device has been reset recently
      * Note that a switch will typically rollover the uptime counter every 497 days
@@ -949,10 +1076,6 @@ main(int argc, char *argv[])
      */
     if ((lastcheck + UPTIME_TOLERANCE_IN_SECS) > uptime)
         lastcheck = 0;
-
-    if (oldperfdatap && lastcheck && oldperfdatap[0])
-        parse_perfdata(oldperfdatap, oldperfdata, prefix);
-
 
     for (i=0;i<ifNumber;i++)  {
         if (interfaces[i].descr && !interfaces[i].ignore) {
@@ -966,36 +1089,48 @@ main(int argc, char *argv[])
                     addstr(&perf, "[CRITICAL] ");
                     errorflag++;
                     /* show the alias if configured */
-                    addstr(&out, ", %s", nameOrDescr);
-                    addstr(&perf, "%s", nameOrDescr);
-                    if (get_aliases_flag && strlen(interfaces[i].alias))
-                        addstr(&perf, " (%s)", interfaces[i].alias);
-                    addstr(&perf, " is down");
-                    if (interfaces[i].err_disable)
-                        addstr(&perf, " (errdisable)");
+                    if (get_names_flag && strlen(interfaces[i].name)) {
+                        addstr(&out, ", %s", interfaces[i].name);
+                        addstr(&perf, "%s", interfaces[i].name);
+                    } else {
+                        addstr(&out, ", %s", interfaces[i].descr);
+                        addstr(&perf, "%s", interfaces[i].descr);
+                    }
                     if (!interfaces[i].admin_down) {
-                        if (get_aliases_flag && strlen(interfaces[i].alias))
+                        if (get_aliases_flag && strlen(interfaces[i].alias)) {
                             addstr(&out, " (%s) down", interfaces[i].alias);
-                        else
+                            addstr(&perf, " (%s) down", interfaces[i].alias);
+                        } else {
                             addstr(&out, " down");
-                        if (interfaces[i].err_disable)
+                            addstr(&perf, " down");
+                        }
+                        if (interfaces[i].err_disable) {
                             addstr(&out, " (errdisable)");
+                            addstr(&perf, " (errdisable)");
+                        }
                     }
                 } else {
-                    addstr(&perf, "[OK] %s", nameOrDescr);
+                    addstr(&perf, "[OK] ");
+                    if (get_names_flag && strlen(interfaces[i].name))
+                        addstr(&perf, "%s", interfaces[i].name);
+                    else
+                        addstr(&perf, "%s", interfaces[i].descr);
                     if (get_aliases_flag && strlen(interfaces[i].alias))
-                        addstr(&perf, " (%s)", interfaces[i].alias);
-                    addstr(&perf, " is up");
+                        addstr(&perf, " (%s) down", interfaces[i].alias);
+                    else
+                        addstr(&perf, " down");
                 }
             } else if (interfaces[i].admin_down && print_all_flag) {
-                addstr(&perf, "[OK] %s", nameOrDescr);
+                addstr(&perf, "[OK] %s", (get_names_flag && strlen(interfaces[i].name)) ? interfaces[i].name : interfaces[i].descr);
                 if (get_aliases_flag && strlen(interfaces[i].alias))
-                    addstr(&perf, " (%s)", interfaces[i].alias);
-                addstr(&perf, " is down (administrative down)");
+                    addstr(&perf, " (%s) is down (administrative down)", interfaces[i].alias);
+                else
+                    addstr(&perf, " is down (administrative down)");
             }
 
+
             /* check if errors on the interface are increasing faster than our defined value */
-            else if (oldperfdata[i].inErrors && oldperfdata[i].outErrors &&
+            else if ((oldperfdata[i].inErrors || oldperfdata[i].outErrors) &&
                 (interfaces[i].inErrors > (oldperfdata[i].inErrors + (unsigned long) err_tolerance)
                 || interfaces[i].outErrors > (oldperfdata[i].outErrors + (unsigned long) coll_tolerance))
                 ) {
@@ -1013,12 +1148,12 @@ main(int argc, char *argv[])
                     /* if we are not in cisco mode simply use "errors" */
 
                     if (mode != CISCO)
-                        addstr(&perf, " errors");
+                        addstr(&perf, " errors\n");
                     else {
                          if (interfaces[i].inErrors > (oldperfdata[i].inErrors + (unsigned long) err_tolerance))
-                              addstr(&perf, " CRC errors");
+                              addstr(&perf, " %lu CRC errors since last check\n", interfaces[i].inErrors - oldperfdata[i].inErrors);
                          if (interfaces[i].outErrors > (oldperfdata[i].outErrors + (unsigned long) coll_tolerance))
-                              addstr(&perf, " collisions");
+                              addstr(&perf, " %lu collisions since last check\n", interfaces[i].outErrors - oldperfdata[i].outErrors);
                     }
                     if (get_names_flag && strlen(interfaces[i].name))
                         addstr(&out, ", %s has %lu errors", interfaces[i].name,
@@ -1027,25 +1162,26 @@ main(int argc, char *argv[])
                         addstr(&out, ", %s has %lu errors", interfaces[i].descr,
                             (interfaces[i].inErrors + interfaces[i].outErrors - oldperfdata[i].inErrors - oldperfdata[i].outErrors));
                     warnflag++;
-                    warn++;
+                    //warn++; /* if you uncomment this you will get 2 rows with [warning] */
                 }
             }
 
-
-            if (lastcheck && (interfaces[i].speed || speed)) {
-                inbitps = (subtract64(interfaces[i].inOctets, oldperfdata[i].inOctets) / (u64)lastcheck) * 8ULL;
-                outbitps = (subtract64(interfaces[i].outOctets, oldperfdata[i].outOctets) / (u64)lastcheck) * 8ULL;
+            if (lastcheck && (interfaces[i].speed || speed) && !interfaces[i].admin_down && (oldperfdata[i].inOctets || oldperfdata[i].outOctets)) {
+                interfaces[i].inbitps = (subtract64(interfaces[i].inOctets, oldperfdata[i].inOctets) / (u64)lastcheck) * 8ULL;
+                interfaces[i].outbitps = (subtract64(interfaces[i].outOctets, oldperfdata[i].outOctets) / (u64)lastcheck) * 8ULL;
                 if (speed) {
-                    inload = (long double)inbitps / ((long double)speed/100L);
-                    outload = (long double)outbitps / ((long double)speed/100L);
+                    inload = (long double)interfaces[i].inbitps / ((long double)speed/100L);
+                    outload = (long double)interfaces[i].outbitps / ((long double)speed/100L);
                 } else {
                     /* use the interface speed if a speed is not given */
-                    inload = (long double)inbitps / ((long double)interfaces[i].speed/100L);
-                    outload = (long double)outbitps / ((long double)interfaces[i].speed/100L);
+                    inload = (long double)interfaces[i].inbitps / ((long double)interfaces[i].speed/100L);
+                    outload = (long double)interfaces[i].outbitps / ((long double)interfaces[i].speed/100L);
                 }
 
-                if ( (bw > 0) && ((int)inload > bw || (int)outload > bw))
+                if ( (bw > 0) && ((int)inload > bw || (int)outload > bw)) {
                     warn++;
+                    warnflag++;
+                }
             }
 
             if (interfaces[i].status && !interfaces[i].ignore) {
@@ -1059,9 +1195,9 @@ main(int argc, char *argv[])
                     addstr(&perf, " (%s)", interfaces[i].alias);
                 addstr(&perf, " is up");
             }
-            if (lastcheck && (interfaces[i].speed || speed) && (inbitps > 0ULL || outbitps > 0ULL)) {
-                gauge_to_si(inbitps, &ins);
-                gauge_to_si(outbitps, &outs);
+            if (lastcheck && (interfaces[i].speed || speed) && (interfaces[i].inbitps > 0ULL || interfaces[i].outbitps > 0ULL) && !interfaces[i].admin_down) {
+                gauge_to_si(interfaces[i].inbitps, &ins);
+                gauge_to_si(interfaces[i].outbitps, &outs);
 
                 addstr(&perf, "   %sbps(%0.2f%%)/%sbps(%0.2f%%)", ins, inload, outs, outload);
                 free(ins);
@@ -1079,29 +1215,21 @@ main(int argc, char *argv[])
         printf("WARNING:");
     else
         printf("OK:");
-#ifdef DEBUG
-    fprintf(stderr, " %d interfaces found", ifNumber);
-    if(list) printf(", of which %d matched the regex. ", count);
-#else
-    if(list)
-        printf(" %d interface%s found", count, (count==1)?"":"s");
-    else
-        printf(" %d interface%s found", ifNumber, (ifNumber==1)?"":"s");
-#endif
 
-
+    printf(" %d interface%s found", ifNumber, (ifNumber==1)?"":"s");
+    if(list) printf(", of which %d matched the regex", count);
 
 
     /* now print performance data */
 
 
-    printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf", (int)out.len, out.text, (count - ignore_count), (((long double)tv.tv_sec + ((long double)tv.tv_usec/1000000)) - starttime ));
+    printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf checktime=%ld", (int)out.len, out.text, count, (((long double)tv.tv_sec + ((long double)tv.tv_usec/1000000)) - starttime ), tv.tv_sec);
     if (uptime)
             printf(" %sdevice::check_snmp::uptime=%us", prefix?prefix:"", uptime);
 
     for (i=0;i<ifNumber;i++)  {
         if (interfaces[i].descr && !interfaces[i].ignore && (!interfaces[i].admin_down || print_all_flag)) {
-            printf(" %s%s::check_snmp::", prefix?prefix:"", get_names_flag ? interfaces[i].name : oldperfdata[i].descr);
+            printf(" %s%s::check_snmp::", prefix?prefix:"", oldperfdata[i].descr);
             printf("%s=%lluc %s=%lluc", if_vars[0], interfaces[i].inOctets, if_vars[1], interfaces[i].outOctets);
             printf(" %s=%luc %s=%luc", if_vars[2], interfaces[i].inDiscards, if_vars[3], interfaces[i].outDiscards);
             printf(" %s=%luc %s=%luc", if_vars[4], interfaces[i].inErrors, if_vars[5], interfaces[i].outErrors);
@@ -1110,6 +1238,7 @@ main(int argc, char *argv[])
                 printf(" %s=%llu", if_vars[8], speed);
             else
                 printf(" %s=%llu", if_vars[8], interfaces[i].speed);
+            printf(" %s=%llub %s=%llub", if_vars[9], interfaces[i].inbitps, if_vars[10], interfaces[i].outbitps);
         }
     }
     printf("\n%*s", (int)perf.len, perf.text);
@@ -1365,7 +1494,7 @@ int usage(char *progname)
  *
  * e.g.  interfaces::check_multi::plugins=2 time=0.07 11::check_snmp::inOctets=53273084427c outOctets=6370502528c inDiscards=0c outDiscards=3921c inErrors=3c outErrors=20165c inUcast=38550136c outUcast=21655535c speed=100000000 21::check_snmp::inOctets=5627677780c outOctets=15023959911c inDiscards=0c outDiscards=0c inErrors=0c outErrors=5431c inUcast=34020897c outUcast=35875426c speed=1000000000
  */
-int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata, char *prefix)
+int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata, char *prefix, unsigned int *parsed_lastcheck)
 {
     char *last=0, *last2=0, *word, *interface=0, *var;
     char *ptr;
@@ -1385,6 +1514,15 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata, char *prefi
             /* check multi perfdata found */
             plugins = strtol(strchr(word, '=') + 1, NULL, 10);
             fprintf(stderr, "Found %d plugins\n", plugins);
+#endif
+            continue;
+        }
+
+        if((ptr = strstr(word, "checktime="))) {
+            /* last checktime found */
+            *parsed_lastcheck = strtol(strchr(word, '=') + 1, NULL, 10);
+#ifdef DEBUG
+            fprintf(stderr, "Found last checktime: %d\n", *parsed_lastcheck);
 #endif
             continue;
         }
@@ -1464,6 +1602,10 @@ void set_value(struct ifStruct *oldperfdata, char *interface, char *var, u64 val
                 oldperfdata[i].outUcast = value;
             else if (strcmp(var, if_vars[8]) == 0)
                 oldperfdata[i].speed = value;
+            else if (strcmp(var, if_vars[9]) == 0)
+                oldperfdata[i].inbitps = value;
+            else if (strcmp(var, if_vars[10]) == 0)
+                oldperfdata[i].outbitps = value;
 
             continue;
         }

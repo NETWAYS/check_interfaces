@@ -59,6 +59,8 @@ struct ifStruct {
     unsigned long   inUcast;
     unsigned long   outUcast;
     u64     speed;
+    u64     inbitps;
+    u64     outbitps;
 };
 
 struct OIDStruct {
@@ -81,7 +83,9 @@ static char *if_vars_default[] = {
             "outErrors",
             "inUcast",
             "outUcast",
-            "speed" };
+            "speed",
+            "inBitps",
+            "outBitps" };
 
 static char *if_vars_cisco[] = {
             "inOctets",
@@ -92,7 +96,9 @@ static char *if_vars_cisco[] = {
             "outCollisions",
             "inUcast",
             "outUcast",
-            "speed" };
+            "speed",
+            "inBitps",
+            "outBitps" };
 
 
 
@@ -106,6 +112,9 @@ static char    *oid_if_bintec[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0", "
 static char    *oid_alias_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.18", 0}; /* "alias" */
 static char    *oid_alias_get[] = {".1.3.6.1.2.1.31.1.1.1.18.1", 0}; /* "alias" */
 static char    *oid_alias_bintec[] = {".1.3.6.1.2.1.31.1.1.1.18.0", 0}; /* "alias" */
+static char    *oid_names_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.1", 0}; /* "name" */
+static char    *oid_names_get[] = {".1.3.6.1.2.1.31.1.1.1.1.1", 0}; /* "name" */
+static char    *oid_names_bintec[] = {".1.3.6.1.2.1.31.1.1.1.1.0", 0}; /* "name - NOT TESTED!" */
 
 static char    *oid_vals_default[] = {
     ".1.3.6.1.2.1.2.2.1.7",    /* ifAdminStatus */
@@ -176,7 +185,7 @@ u64 subtract64(u64, u64);
 netsnmp_session *start_session(netsnmp_session *, char *, char *);
 netsnmp_session *start_session_v3(netsnmp_session *, char *, char *, char *, char *, char *, char *);
 int usage(char *);
-int parse_perfdata(char *, struct ifStruct *, char *);
+int parse_perfdata(char *, struct ifStruct *, char *, unsigned int *);
 void set_value(struct ifStruct *, char *, char *, u64, char *);
 int parseoids(int, char *, struct OIDStruct *);
 int create_request(netsnmp_session *, struct OIDStruct **, char **, int, netsnmp_pdu **);

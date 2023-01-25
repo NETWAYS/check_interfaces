@@ -133,7 +133,7 @@ main(int argc, char *argv[])
     int     coll_tolerance = -1;
     u64     speed = 0;
     int     bw = 0;
-    size_t  size,size2;
+    size_t  size;
 
     struct ifStruct *interfaces = NULL; /* current interface data */
     struct ifStruct *oldperfdata = NULL; /* previous check interface data */
@@ -147,7 +147,7 @@ main(int argc, char *argv[])
     char *indexes=0;
 #endif /* INDEXES */
 #ifdef HAVE_GETADDRINFO
-    struct addrinfo *addr_list, *addr_listp;
+    struct addrinfo *addr_list;
 #endif /* HAVE_GETADDRINFO */
 
     struct timeval tv;
@@ -1081,6 +1081,9 @@ main(int argc, char *argv[])
         if (interfaces[i].descr && !interfaces[i].ignore) {
             int warn = 0;
 
+            char *nameOrDescr = get_names_flag && strlen(interfaces[i].name)
+                ? interfaces[i].name : interfaces[i].descr;
+
             if ((!interfaces[i].status || interfaces[i].err_disable) && !interfaces[i].ignore && !interfaces[i].admin_down) {
                 if (crit_on_down_flag) {
                     addstr(&perf, "[CRITICAL] ");
@@ -1187,14 +1190,10 @@ main(int argc, char *argv[])
                 else
                     addstr(&perf, "[WARNING]");
 
-                if (get_names_flag && strlen(interfaces[i].name))
-                    addstr(&perf, " %s", interfaces[i].name);
-                else
-                    addstr(&perf, " %s", interfaces[i].descr);
+                addstr(&perf, " %s", nameOrDescr);
                 if (get_aliases_flag && strlen(interfaces[i].alias))
-                    addstr(&perf, " (%s) is up", interfaces[i].alias);
-                else
-                    addstr(&perf, " is up");
+                    addstr(&perf, " (%s)", interfaces[i].alias);
+                addstr(&perf, " is up");
             }
             if (lastcheck && (interfaces[i].speed || speed) && (interfaces[i].inbitps > 0ULL || interfaces[i].outbitps > 0ULL) && !interfaces[i].admin_down) {
                 gauge_to_si(interfaces[i].inbitps, &ins);
@@ -1710,7 +1709,6 @@ int parseoids(int i, char *oid_list, struct OIDStruct *query)
 void create_pdu(int mode, char **oidlist, netsnmp_pdu **pdu, struct OIDStruct **oids, int nonrepeaters, long max)
 {
     int i;
-    static char **oid_ifp;
 
     if (mode == NONBULK)
         *pdu = snmp_pdu_create(SNMP_MSG_GET);

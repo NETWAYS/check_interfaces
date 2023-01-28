@@ -153,11 +153,6 @@ main(int argc, char *argv[])
     struct ifStruct *oldperfdata = NULL; /* previous check interface data */
     struct OIDStruct *OIDp;
 
-
-#ifdef HAVE_GETADDRINFO
-    struct addrinfo *addr_list;
-#endif /* HAVE_GETADDRINFO */
-
     struct timeval tv;
     struct timezone tz;
     long double starttime;

@@ -675,18 +675,17 @@ main(int argc, char *argv[])
         }
         regfree(&config.re);
 
-    if (config.exclude_list)
-        regfree(&config.exclude_re);
+      if (config.exclude_list)
+          regfree(&config.exclude_re);
 
-        if (count) {
+      if (count) {
 #ifdef DEBUG
-            fprintf(stderr, "- %d interface%s found\n", count, (count==1)?"":"s");
+          fprintf(stderr, "- %d interface%s found\n", count, (count==1)?"":"s");
 #endif
-        } else {
-            printf("- no interfaces matched regex");
-            exit (0);
-        }
-
+      } else {
+          printf("- no interfaces matched regex");
+          exit (0);
+      }
     }
 
 

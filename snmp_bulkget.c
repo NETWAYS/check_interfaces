@@ -60,7 +60,6 @@
 #include <net-snmp/net-snmp-config.h>
 #include <string.h>
 #include <sys/time.h>
-#include <regex.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <limits.h>
@@ -88,6 +87,8 @@
 
 void create_pdu(int, char **, netsnmp_pdu **, struct OIDStruct **, int, long);
 
+/* Forward declaration of command line parsing */
+void parse_and_check_commandline(int argc, char **argv, struct configuration_struct *config);
 
 
 /* uptime counter */
@@ -112,7 +113,7 @@ main(int argc, char *argv[])
     netsnmp_variable_list *vars;
     int     status, status2;
     int     count = 0; /* used for: the number of interfaces we receive, the number of regex matches */
-    int     i, j, k;
+    int     j, k;
     int errorflag = 0;
     int warnflag = 0;
     int lastifflag = 0;
@@ -160,9 +161,7 @@ main(int argc, char *argv[])
     struct timeval tv;
     struct timezone tz;
     long double starttime;
-    regex_t re, exclude_re;
     int ignore_count = 0;
-    int opt;
 
     double inload = 0,outload = 0;
     char *ins, *outs;
@@ -194,204 +193,10 @@ main(int argc, char *argv[])
     oid_vals = oid_vals_default;
     if_vars = if_vars_default;
 
-    char *progname = strrchr(argv[0], '/');
-    if (*progname && *(progname+1))
-        progname++;
-    else
-        progname = "check_interfaces";
+    parse_and_check_commandline(argc, argv, &config);
 
-    /* parse options */
-    static struct option longopts[] =
-    {
-        {"aliases",     no_argument,        NULL,   'a'},
-        {"match-aliases",     no_argument,  NULL,   'A'},
-        {"bandwidth",   required_argument,  NULL,   'b'},
-        {"community",   required_argument,  NULL,   'c'},
-        {"down-is-ok",  no_argument,        NULL,   'd'},
-        {"errors",      required_argument,  NULL,   'e'},
-        {"out-errors",  required_argument,  NULL,   'f'},
-        {"hostname",    required_argument,  NULL,   'h'},
-        {"auth-proto",  required_argument,  NULL,   'j'},
-        {"auth-phrase", required_argument,  NULL,   'J'},
-        {"priv-proto",  required_argument,  NULL,   'k'},
-        {"priv-phrase", required_argument,  NULL,   'K'},
-        {"mode",        required_argument,  NULL,   'm'},
-        {"perfdata",    required_argument,  NULL,   'p'},
-        {"prefix",      required_argument,  NULL,   'P'},
-        {"regex",       required_argument,  NULL,   'r'},
-        {"exclude-regex",    required_argument,    NULL,    'R'},
-        {"if-names",    no_argument,        NULL,   'N'},
-        {"debug-print", no_argument,        NULL,   'D'},
-        {"speed",       required_argument,  NULL,   's'},
-        {"lastcheck",   required_argument,  NULL,   't'},
-        {"user",        required_argument,  NULL,   'u'},
-        {"trim",        required_argument,  NULL,   'x'},
-        {"help",        no_argument,        NULL,   '?'},
-        {"timeout",     required_argument,  NULL,   2},
-        {"sleep",       required_argument,  NULL,   3},
-        {"retries",     required_argument,  NULL,   4},
-        {"max-repetitions", required_argument, NULL, 5},
-        {NULL,          0,                  NULL,   0}
-    };
-
-
-    while ((opt = getopt_long(argc, argv, "aAb:c:dDe:f:h:j:J:k:K:m:Np:P:r:R:s:t:u:x:?", longopts, NULL)) != -1)
-    {
-        switch(opt)
-        {
-            case 'a':
-                config.get_aliases_flag = true;
-                break;
-            case 'A':
-                config.get_aliases_flag = true; /* we need to see what we have matched... */
-                config.match_aliases_flag = true;
-                break;
-            case 'b':
-                config.bandwith = strtol(optarg, NULL, 10);
-                break;
-            case 'c':
-                config.community = optarg;
-                break;
-            case 'd':
-                config.crit_on_down_flag = false;
-                break;
-            case 'D':
-                config.print_all_flag = true;
-                break;
-            case 'e':
-                config.err_tolerance = strtol(optarg, NULL, 10);
-                break;
-            case 'f':
-                config.coll_tolerance = strtol(optarg, NULL, 10);
-                break;
-            case 'h':
-                config.hostname = optarg;
-                break;
-            case 'j':
-                config.auth_proto = optarg;
-                break;
-            case 'J':
-                config.auth_pass = optarg;
-                break;
-            case 'k':
-                config.priv_proto = optarg;
-                break;
-            case 'K':
-                config.priv_pass = optarg;
-                break;
-            case 'm':
-                /* mode switch */
-                for (i=0; modes[i]; i++)
-                {
-                    if (!strcmp(optarg, modes[i]))
-                    {
-                        config.mode = i;
-                        break;
-                    }
-                }
-                break;
-            case 'N':
-                config.get_names_flag = true;
-                break;
-            case 'p':
-                config.oldperfdatap = optarg;
-                break;
-            case 'P':
-                config.prefix = optarg;
-                break;
-            case 'r':
-                config.list = optarg;
-                break;
-            case 'R':
-                config.exclude_list = optarg;
-                break;
-            case 's':
-                config.speed = strtoull(optarg, NULL, 10);
-                break;
-            case 't':
-                config.lastcheck = strtol(optarg, NULL, 10);
-                break;
-            case 'u':
-                config.user = optarg;
-                break;
-            case 'x':
-                config.trimdescr = strtol(optarg, NULL, 10);
-                break;
-            case 2:
-                /* convert from ms to us */
-                config.global_timeout = strtol(optarg, NULL, 10) * 1000UL;
-                break;
-            case 3:
-                /* convert from ms to us */
-                config.sleep_usecs = strtol(optarg, NULL, 10) * 1000UL;
-                break;
-            case 4:
-                config.session_retries = atoi(optarg);
-                break;
-            case 5:
-                config.pdu_max_repetitions = strtol(optarg, NULL, 10);
-                break;
-            case '?':
-            default:
-                exit(usage(progname));
-
-        }
-    }
-    argc -= optind;
-    argv += optind;
-
-    if (config.coll_tolerance == -1)
-    {
-        /* set the outErrors tolerance to that of inErrors unless explicitly set otherwise */
-        config.coll_tolerance = config.err_tolerance;
-    }
-
-    if (!(config.hostname))
-    {
-        exit(usage(progname));
-    }
-
-#ifdef HAVE_GETADDRINFO
-    /* check for a valid hostname / IP Address */
-    if(getaddrinfo(config.hostname, NULL, NULL, &addr_list)) {
-        printf("Failed to resolve hostname %s\n", config.hostname);
-        exit(3);
-    }
-    /* name is resolvable - pass it to the snmplib */
-    freeaddrinfo(addr_list);
-#endif /* HAVE_GETADDRINFO */
-
-    if (!config.community)
-        config.community = default_community;
-
-    if (config.exclude_list && !config.list)
-        /* use .* as the default regex */
-        config.list = ".*";
-
-    /* get the start time */
     gettimeofday(&tv, &tz);
     starttime=(long double)tv.tv_sec + (((long double)tv.tv_usec)/1000000);
-
-    /* parse the interfaces regex */
-    if (config.list) {
-        status = regcomp(&re, config.list, REG_ICASE|REG_EXTENDED|REG_NOSUB);
-        if (status != 0) {
-            printf("Error creating regex\n");
-            exit (3);
-        }
-
-        if (config.exclude_list) {
-            status = regcomp(&exclude_re, config.exclude_list, REG_ICASE|REG_EXTENDED|REG_NOSUB);
-            if (status != 0) {
-                printf("Error creating exclusion regex\n");
-                exit (3);
-            }
-        }
-    }
-
-    /* set the MIB variable if it is unset to avoid net-snmp warnings */
-    if (getenv("MIBS") == NULL)
-        setenv("MIBS", "", 1);
 
 #ifdef DEBUG
     benchmark_start("Start SNMP session");
@@ -676,7 +481,7 @@ main(int argc, char *argv[])
                     /* now we fill our interfaces array with the alias
                      */
                     if (vars->type == ASN_OCTET_STR) {
-                        i = (int) vars->name[(vars->name_length - 1)];
+                        int i = (int) vars->name[(vars->name_length - 1)];
                         if (i)  {
                             MEMCPY(interfaces[count].alias, vars->val.string, vars->val_len);
                             TERMSTR(interfaces[count].alias, vars->val_len);
@@ -791,7 +596,7 @@ main(int argc, char *argv[])
                     /* now we fill our interfaces array with the names
                      */
                     if (vars->type == ASN_OCTET_STR) {
-                        i = (int) vars->name[(vars->name_length - 1)];
+                        int i = (int) vars->name[(vars->name_length - 1)];
                         if (i)  {
                             MEMCPY(interfaces[count].name, vars->val.string, vars->val_len);
                             TERMSTR(interfaces[count].name, vars->val_len);
@@ -849,22 +654,22 @@ main(int argc, char *argv[])
          */
 
         count = 0;
-        for (i=0; i < ifNumber; i++) {
+        for (int i=0; i < ifNumber; i++) {
             /* When --if-name is set ignore descr in favor of name, else use old behaviour */
             if (config.get_names_flag)
-                status =  !regexec(&re, interfaces[i].name, (size_t) 0, NULL, 0) ||
-                           (config.match_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+                status =  !regexec(&config.re, interfaces[i].name, (size_t) 0, NULL, 0) ||
+                           (config.match_aliases_flag && !(regexec(&config.re, interfaces[i].alias, (size_t) 0, NULL, 0)));
             else
-                status =  !regexec(&re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
-                           (config.match_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+                status =  !regexec(&config.re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
+                           (config.match_aliases_flag && !(regexec(&config.re, interfaces[i].alias, (size_t) 0, NULL, 0)));
             status2 = 0;
             if (status && config.exclude_list) {
                 if (config.get_names_flag)
-                    status2 = !regexec(&exclude_re, interfaces[i].name, (size_t) 0, NULL, 0) ||
-                              (config.match_aliases_flag && !(regexec(&re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+                    status2 = !regexec(&config.exclude_re, interfaces[i].name, (size_t) 0, NULL, 0) ||
+                              (config.match_aliases_flag && !(regexec(&config.re, interfaces[i].alias, (size_t) 0, NULL, 0)));
                 else
-                    status2 = !regexec(&exclude_re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
-                              (config.match_aliases_flag && !(regexec(&exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0)));
+                    status2 = !regexec(&config.exclude_re, interfaces[i].descr, (size_t) 0, NULL, 0) ||
+                              (config.match_aliases_flag && !(regexec(&config.exclude_re, interfaces[i].alias, (size_t) 0, NULL, 0)));
             } if (status && !status2) {
                 count++;
 #ifdef DEBUG
@@ -873,10 +678,10 @@ main(int argc, char *argv[])
             } else
                 interfaces[i].ignore = 1;
         }
-        regfree(&re);
+        regfree(&config.re);
 
     if (config.exclude_list)
-        regfree(&exclude_re);
+        regfree(&config.exclude_re);
 
         if (count) {
 #ifdef DEBUG
@@ -905,7 +710,7 @@ main(int argc, char *argv[])
                 for (vars = response->variables; vars; vars = vars->next_variable) {
                     k = -1;
                     /* compare the received value to the requested value */
-                    for ( i = 0; oid_vals[i]; i++) {
+                    for ( int i = 0; oid_vals[i]; i++) {
                         if (!memcmp(OIDp[i].name, vars->name, OIDp[i].name_len*sizeof(oid))) {
                             k = i;
                             break;
@@ -965,7 +770,7 @@ main(int argc, char *argv[])
                 for (vars = response->variables; vars; vars = vars->next_variable) {
                     k = -1;
                     /* compare the received value to the requested value */
-                    for ( i = 0; oid_extended[i]; i++) {
+                    for ( int i = 0; oid_extended[i]; i++) {
                         if (!memcmp(OIDp[i].name, vars->name, OIDp[i].name_len*sizeof(oid))) {
                             k = i;
                             break;
@@ -1023,7 +828,7 @@ main(int argc, char *argv[])
                 for (vars = response->variables; vars; vars = vars->next_variable) {
                     k = -1;
                     /* compare the received value to the requested value */
-                    for ( i = 0; oid_extended_cisco[i]; i++) {
+                    for ( int i = 0; oid_extended_cisco[i]; i++) {
                         if (!memcmp(OIDp[i].name, vars->name, OIDp[i].name_len*sizeof(oid))) {
                             k = i;
                             break;
@@ -1075,7 +880,7 @@ main(int argc, char *argv[])
     if ((config.lastcheck + UPTIME_TOLERANCE_IN_SECS) > uptime)
         config.lastcheck = 0;
 
-    for (i=0;i<ifNumber;i++)  {
+    for (int i=0;i<ifNumber;i++)  {
         if (!interfaces[i].ignore) {
             int warn = 0;
 
@@ -1225,7 +1030,7 @@ main(int argc, char *argv[])
     if (uptime)
             printf(" %sdevice::check_snmp::uptime=%us", config.prefix?config.prefix:"", uptime);
 
-    for (i=0;i<ifNumber;i++)  {
+    for (int i=0;i<ifNumber;i++)  {
         if (!interfaces[i].ignore && (!interfaces[i].admin_down || config.print_all_flag)) {
             printf(" %s%s::check_snmp::", config.prefix?config.prefix:"", oldperfdata[i].descr);
             printf("%s=%lluc %s=%lluc", if_vars[0], interfaces[i].inOctets, if_vars[1], interfaces[i].outOctets);
@@ -1731,4 +1536,207 @@ void create_pdu(int mode, char **oidlist, netsnmp_pdu **pdu, struct OIDStruct **
         parseoids(i, oidlist[i], *oids);
         snmp_add_null_var(*pdu, (*oids)[i].name, (*oids)[i].name_len);
     }
+}
+
+void parse_and_check_commandline(int argc, char **argv, struct configuration_struct *config) {
+    int opt;
+
+    char *progname = strrchr(argv[0], '/');
+    if (*progname && *(progname+1))
+        progname++;
+    else
+        progname = "check_interfaces";
+
+    /* parse options */
+    static struct option longopts[] =
+    {
+        {"aliases",     no_argument,        NULL,   'a'},
+        {"match-aliases",     no_argument,  NULL,   'A'},
+        {"bandwidth",   required_argument,  NULL,   'b'},
+        {"community",   required_argument,  NULL,   'c'},
+        {"down-is-ok",  no_argument,        NULL,   'd'},
+        {"errors",      required_argument,  NULL,   'e'},
+        {"out-errors",  required_argument,  NULL,   'f'},
+        {"hostname",    required_argument,  NULL,   'h'},
+        {"auth-proto",  required_argument,  NULL,   'j'},
+        {"auth-phrase", required_argument,  NULL,   'J'},
+        {"priv-proto",  required_argument,  NULL,   'k'},
+        {"priv-phrase", required_argument,  NULL,   'K'},
+        {"mode",        required_argument,  NULL,   'm'},
+        {"perfdata",    required_argument,  NULL,   'p'},
+        {"prefix",      required_argument,  NULL,   'P'},
+        {"regex",       required_argument,  NULL,   'r'},
+        {"exclude-regex",    required_argument,    NULL,    'R'},
+        {"if-names",    no_argument,        NULL,   'N'},
+        {"debug-print", no_argument,        NULL,   'D'},
+        {"speed",       required_argument,  NULL,   's'},
+        {"lastcheck",   required_argument,  NULL,   't'},
+        {"user",        required_argument,  NULL,   'u'},
+        {"trim",        required_argument,  NULL,   'x'},
+        {"help",        no_argument,        NULL,   '?'},
+        {"timeout",     required_argument,  NULL,   2},
+        {"sleep",       required_argument,  NULL,   3},
+        {"retries",     required_argument,  NULL,   4},
+        {"max-repetitions", required_argument, NULL, 5},
+        {NULL,          0,                  NULL,   0}
+    };
+
+
+    while ((opt = getopt_long(argc, argv, "aAb:c:dDe:f:h:j:J:k:K:m:Np:P:r:R:s:t:u:x:?", longopts, NULL)) != -1)
+    {
+        switch(opt)
+        {
+            case 'a':
+                config->get_aliases_flag = true;
+                break;
+            case 'A':
+                config->get_aliases_flag = true; /* we need to see what we have matched... */
+                config->match_aliases_flag = true;
+                break;
+            case 'b':
+                config->bandwith = strtol(optarg, NULL, 10);
+                break;
+            case 'c':
+                config->community = optarg;
+                break;
+            case 'd':
+                config->crit_on_down_flag = false;
+                break;
+            case 'D':
+                config->print_all_flag = true;
+                break;
+            case 'e':
+                config->err_tolerance = strtol(optarg, NULL, 10);
+                break;
+            case 'f':
+                config->coll_tolerance = strtol(optarg, NULL, 10);
+                break;
+            case 'h':
+                config->hostname = optarg;
+                break;
+            case 'j':
+                config->auth_proto = optarg;
+                break;
+            case 'J':
+                config->auth_pass = optarg;
+                break;
+            case 'k':
+                config->priv_proto = optarg;
+                break;
+            case 'K':
+                config->priv_pass = optarg;
+                break;
+            case 'm':
+                /* mode switch */
+                for (int i=0; modes[i]; i++)
+                {
+                    if (!strcmp(optarg, modes[i]))
+                    {
+                        config->mode = i;
+                        break;
+                    }
+                }
+                break;
+            case 'N':
+                config->get_names_flag = true;
+                break;
+            case 'p':
+                config->oldperfdatap = optarg;
+                break;
+            case 'P':
+                config->prefix = optarg;
+                break;
+            case 'r':
+                config->list = optarg;
+                break;
+            case 'R':
+                config->exclude_list = optarg;
+                break;
+            case 's':
+                config->speed = strtoull(optarg, NULL, 10);
+                break;
+            case 't':
+                config->lastcheck = strtol(optarg, NULL, 10);
+                break;
+            case 'u':
+                config->user = optarg;
+                break;
+            case 'x':
+                config->trimdescr = strtol(optarg, NULL, 10);
+                break;
+            case 2:
+                /* convert from ms to us */
+                config->global_timeout = strtol(optarg, NULL, 10) * 1000UL;
+                break;
+            case 3:
+                /* convert from ms to us */
+                config->sleep_usecs = strtol(optarg, NULL, 10) * 1000UL;
+                break;
+            case 4:
+                config->session_retries = atoi(optarg);
+                break;
+            case 5:
+                config->pdu_max_repetitions = strtol(optarg, NULL, 10);
+                break;
+            case '?':
+            default:
+                exit(usage(progname));
+
+        }
+    }
+    argc -= optind;
+    argv += optind;
+
+    if (config->coll_tolerance == -1)
+    {
+        /* set the outErrors tolerance to that of inErrors unless explicitly set otherwise */
+        config->coll_tolerance = config->err_tolerance;
+    }
+
+    if (!(config->hostname))
+    {
+        exit(usage(progname));
+    }
+
+#ifdef HAVE_GETADDRINFO
+    struct addrinfo *addr_list;
+    /* check for a valid hostname / IP Address */
+    if(getaddrinfo(config->hostname, NULL, NULL, &addr_list)) {
+        printf("Failed to resolve hostname %s\n", config->hostname);
+        exit(3);
+    }
+    /* name is resolvable - pass it to the snmplib */
+    freeaddrinfo(addr_list);
+#endif /* HAVE_GETADDRINFO */
+
+    if (!config->community)
+        config->community = default_community;
+
+    if (config->exclude_list && !config->list)
+        /* use .* as the default regex */
+        config->list = ".*";
+
+    /* get the start time */
+
+    /* parse the interfaces regex */
+    int status;
+    if (config->list) {
+        status = regcomp(&config->re, config->list, REG_ICASE|REG_EXTENDED|REG_NOSUB);
+        if (status != 0) {
+            printf("Error creating regex\n");
+            exit (3);
+        }
+
+        if (config->exclude_list) {
+            status = regcomp(&config->exclude_re, config->exclude_list, REG_ICASE|REG_EXTENDED|REG_NOSUB);
+            if (status != 0) {
+                printf("Error creating exclusion regex\n");
+                exit (3);
+            }
+        }
+    }
+
+    /* set the MIB variable if it is unset to avoid net-snmp warnings */
+    if (getenv("MIBS") == NULL)
+        setenv("MIBS", "", 1);
 }

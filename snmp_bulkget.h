@@ -8,6 +8,8 @@
 #include <netdb.h>
 #endif /* HAVE_GETADDRINFO */
 
+#include <regex.h>
+
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
@@ -203,6 +205,8 @@ typedef struct configuration_struct {
     unsigned int sleep_usecs;
     int session_retries;
     long pdu_max_repetitions;
+    regex_t re;
+    regex_t exclude_re;
 } config;
 
 

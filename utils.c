@@ -27,7 +27,7 @@ int addstrold(char **strp, size_t *strs, const char *format, ...)
 		*strs = 0;
 		return(1);
 	}
-	
+
 	*strs = (*strs - written);
 	*strp = (*strp + written);
 	return(0);
@@ -56,7 +56,7 @@ int addstr(String *str, const char *format, ...)
         str->len = str->max;
 		return(1);
 	}
-	
+
 	str->len = str->len + written;
 	return(0);
 }
@@ -65,7 +65,7 @@ int addstr(String *str, const char *format, ...)
 
 
 
-/* 
+/*
  * Replace troublesome characters in a string with underscores
  * - only use for strings we already know the size of */
 
@@ -116,7 +116,7 @@ int gauge_to_si(u64 bignum, char **str)
 #else
     return asprintf(str, "%Ld", bignum);
 #endif
-	
+
 }
 
 static

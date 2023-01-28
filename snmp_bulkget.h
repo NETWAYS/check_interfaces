@@ -173,6 +173,37 @@ static char default_community[] = "public";
 const char *modes[] = { "default", "cisco", "nonbulk", "bintec", NULL };
 enum mode_enum { DEFAULT, CISCO, NONBULK, BINTEC };
 
+// Config
+typedef struct configuration_struct {
+    bool crit_on_down_flag;
+    bool get_aliases_flag;
+    bool match_aliases_flag;
+    bool get_names_flag;
+    bool print_all_flag;
+
+    char *community;
+    int bandwith;
+    char *oldperfdatap;
+    int     err_tolerance;
+    int     coll_tolerance;
+    char *hostname;
+    char *user;
+    char *auth_proto;
+    char *auth_pass;
+    char *priv_proto;
+    char *priv_pass;
+    int trimdescr;
+    enum mode_enum mode; // hardware mode
+    char *prefix;
+    char *list;
+    unsigned long global_timeout;
+    char *exclude_list;
+    u64     speed;
+    unsigned int lastcheck;
+    unsigned int sleep_usecs;
+    int session_retries;
+    long pdu_max_repetitions;
+} config;
 
 
 /*
@@ -181,11 +212,11 @@ enum mode_enum { DEFAULT, CISCO, NONBULK, BINTEC };
 
 void print64(struct counter64*, unsigned long*);
 u64 convertto64(struct counter64 *, unsigned long *);
-u64 subtract64(u64, u64);
-netsnmp_session *start_session(netsnmp_session *, char *, char *);
-netsnmp_session *start_session_v3(netsnmp_session *, char *, char *, char *, char *, char *, char *);
+u64 subtract64(u64, u64, unsigned int lastcheck);
+netsnmp_session *start_session(netsnmp_session *, char *, char *, enum mode_enum, unsigned long global_timeout, int session_retries);
+netsnmp_session *start_session_v3(netsnmp_session *, char *, char *, char *, char *, char *, char *, unsigned long global_timeout, int session_retries);
 int usage(char *);
-int parse_perfdata(char *, struct ifStruct *, char *, unsigned int *);
-void set_value(struct ifStruct *, char *, char *, u64, char *);
+int parse_perfdata(char *, struct ifStruct *, char *, unsigned int *, enum mode_enum);
+void set_value(struct ifStruct *, char *, char *, u64, char *, enum mode_enum);
 int parseoids(int, char *, struct OIDStruct *);
-int create_request(netsnmp_session *, struct OIDStruct **, char **, int, netsnmp_pdu **);
+int create_request(netsnmp_session *, struct OIDStruct **, char **, int, netsnmp_pdu **, unsigned int sleep_usecs);

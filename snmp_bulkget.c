@@ -119,35 +119,36 @@ main(int argc, char *argv[])
     int lastifflag = 0;
     size_t  size;
 
-    struct configuration_struct config;
-    config.crit_on_down_flag = true;
-    config.get_aliases_flag = false;
-    config.match_aliases_flag = false;
-    config.get_names_flag = false;
-    config.print_all_flag = false;
-    config.community = default_community;
-    config.bandwith = 0;
-    config.oldperfdatap = 0;
-    config.err_tolerance = 50;
-    config.coll_tolerance = -1;
-    config.hostname = 0;
-    config.user = 0;
-    config.auth_proto = 0;
-    config.auth_pass = 0;
-    config.priv_proto = 0;
-    config.priv_pass = 0;
-    config.trimdescr = 0;
-    config.prefix = 0;
-    config.list = 0;
-    config.global_timeout = DFLT_TIMEOUT;
-    config.exclude_list = 0;
-    config.speed = 0;
-    config.lastcheck = 0;
-    config.sleep_usecs = 0;
-    config.session_retries = 2;
-    config.pdu_max_repetitions= 4096L;
+    struct configuration_struct config = {
+      .crit_on_down_flag = true,
+      .get_aliases_flag = false,
+      .match_aliases_flag = false,
+      .get_names_flag = false,
+      .print_all_flag = false,
+      .community = default_community,
+      .bandwith = 0,
+      .oldperfdatap = 0,
+      .err_tolerance = 50,
+      .coll_tolerance = -1,
+      .hostname = 0,
+      .user = 0,
+      .auth_proto = 0,
+      .auth_pass = 0,
+      .priv_proto = 0,
+      .priv_pass = 0,
+      .trimdescr = 0,
+      .prefix = 0,
+      .list = 0,
+      .global_timeout = DFLT_TIMEOUT,
+      .exclude_list = 0,
+      .speed = 0,
+      .lastcheck = 0,
+      .sleep_usecs = 0,
+      .session_retries = 2,
+      .pdu_max_repetitions= 4096L,
+      .mode = DEFAULT,
+    };
 
-    config.mode = DEFAULT;
 
     struct ifStruct *interfaces = NULL; /* current interface data */
     struct ifStruct *oldperfdata = NULL; /* previous check interface data */

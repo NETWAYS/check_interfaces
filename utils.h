@@ -4,8 +4,8 @@
 #define _GNU_SOURCE
 #endif
 
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 #ifdef HAVE_POW
 #include <math.h>
@@ -17,9 +17,9 @@ typedef unsigned long long u64;
 #endif
 
 struct stringStruct {
-    size_t  max;
-    size_t  len;
-    char *  text; /* pointer to an allocation of max + 1 */
+	size_t max;
+	size_t len;
+	char *text; /* pointer to an allocation of max + 1 */
 };
 
 typedef struct stringStruct String;

@@ -1,7 +1,11 @@
+AC_PREREQ(2.71)
 AC_INIT([check_interfaces],[1.4])
 AC_PREFIX_DEFAULT(/usr/local/nagios)
-AC_PROG_CC
-AC_PROG_INSTALL
+AC_PROG_CC()
+AC_PROG_INSTALL()
+
+AM_INIT_AUTOMAKE([1.16.5])
+AM_SILENT_RULES([yes])
 
 
 if test "$cross_compiling" != "yes";
@@ -51,6 +55,26 @@ AC_SEARCH_LIBS(pow, [c m], AC_DEFINE([HAVE_POW]))
 
 dnl look for the getaddrinfo() function
 AC_SEARCH_LIBS(getaddrinfo, [c], AC_DEFINE([HAVE_GETADDRINFO]))
+
+AC_CHECK_FUNCS([clock_gettime])
+AC_CHECK_FUNCS([gettimeofday])
+AC_CHECK_FUNCS([memset])
+AC_CHECK_FUNCS([pow])
+AC_CHECK_FUNCS([regcomp])
+AC_CHECK_FUNCS([setenv])
+AC_CHECK_FUNCS([strchr])
+AC_CHECK_FUNCS([strrchr])
+AC_CHECK_FUNCS([strstr])
+AC_CHECK_FUNCS([strtol])
+AC_CHECK_FUNCS([strtoull])
+AC_CHECK_HEADERS([netdb.h])
+AC_CHECK_HEADERS([sys/socket.h])
+AC_CHECK_HEADERS([sys/time.h])
+AC_CHECK_HEADERS([unistd.h])
+AC_CHECK_HEADER_STDBOOL
+AC_CHECK_TYPES([ptrdiff_t])
+AC_FUNC_MALLOC
+AC_TYPE_SIZE_T
 
 
 AC_SUBST([SNMP_LIBS])

@@ -53,7 +53,6 @@ autom4te.cache
 /config.log
 /config.status
 /configure.scan
-/depcomp
 /install-sh
 /stamp-h1
 

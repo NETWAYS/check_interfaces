@@ -1518,7 +1518,7 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
 		var = strtok_r(word, "=", &last2);
 
 		if (interface && var && valstr)
-			set_value(oldperfdata, interface, var, value, valstr + 1, mode);
+			set_value(oldperfdata, interface, var, value, mode);
 	}
 
 	return (0);
@@ -1528,7 +1528,7 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
  * fill the ifStruct with values
  */
 void set_value(struct ifStruct *oldperfdata, char *interface, char *var,
-			   u64 value, char *valstr, enum mode_enum mode) {
+			   u64 value, enum mode_enum mode) {
 	int i;
 	static char **if_vars;
 

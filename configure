@@ -4419,6 +4419,7 @@ END
   fi
 fi
 
+
 # Check whether --enable-silent-rules was given.
 if test ${enable_silent_rules+y}
 then :

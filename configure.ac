@@ -1,10 +1,11 @@
-AC_PREREQ(2.71)
+AC_PREREQ([2.71])
 AC_INIT([check_interfaces],[1.4])
 AC_PREFIX_DEFAULT(/usr/local/nagios)
 AC_PROG_CC()
 AC_PROG_INSTALL()
 
 AM_INIT_AUTOMAKE([1.16.5])
+
 AM_SILENT_RULES([yes])
 
 

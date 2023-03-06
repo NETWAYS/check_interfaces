@@ -82,7 +82,7 @@ void strcpy_nospaces(char *dest, char *src) {
  */
 
 int gauge_to_si(u64 bignum, char **str) {
-	int i = 0;
+	long unsigned int i = 0;
 	u64 tmpll;
 	static char units[] = "kMGTPE";
 

@@ -54,7 +54,6 @@
 #endif
 #include <stdio.h>
 
-
 #include <limits.h>
 #include <net-snmp/net-snmp-config.h>
 #include <stdarg.h>
@@ -78,83 +77,73 @@ const char *modes[] = {"default", "cisco", "nonbulk", "bintec", NULL};
  * text strings to output in the perfdata
  */
 
-char *if_vars_default[] = {"inOctets",	 "outOctets", "inDiscards",
-								  "outDiscards", "inErrors",  "outErrors",
-								  "inUcast",	 "outUcast",  "speed",
-								  "inBitps",	 "outBitps"};
+char *if_vars_default[] = {"inOctets", "outOctets", "inDiscards", "outDiscards",
+						   "inErrors", "outErrors", "inUcast",	  "outUcast",
+						   "speed",	   "inBitps",	"outBitps"};
 
-char *if_vars_cisco[] = {"inOctets",	   "outOctets", "inDiscards",
-								"outDiscards", "inCRCs",	"outCollisions",
-								"inUcast",	   "outUcast",	"speed",
-								"inBitps",	   "outBitps"};
+char *if_vars_cisco[] = {"inOctets",	"outOctets", "inDiscards",
+						 "outDiscards", "inCRCs",	 "outCollisions",
+						 "inUcast",		"outUcast",	 "speed",
+						 "inBitps",		"outBitps"};
 
 /*
  * OIDs, hardcoded to remove the dependency on MIBs
  */
 char *oid_if_bulkget[] = {".1.3.6.1.2.1.1.3", ".1.3.6.1.2.1.2.1",
-								 ".1.3.6.1.2.1.2.2.1.2",
-								 0}; /* "uptime", "ifNumber", "ifDescr" */
+						  ".1.3.6.1.2.1.2.2.1.2",
+						  0}; /* "uptime", "ifNumber", "ifDescr" */
 
-size_t sizeof_oid_if_bulkget(void) {
-	return sizeof(oid_if_bulkget);
-}
+size_t sizeof_oid_if_bulkget(void) { return sizeof(oid_if_bulkget); }
 
 char *oid_if_get[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0",
-							 ".1.3.6.1.2.1.2.2.1.2.1",
-							 0}; /* "uptime", "ifNumber", "ifDescr" */
+					  ".1.3.6.1.2.1.2.2.1.2.1",
+					  0}; /* "uptime", "ifNumber", "ifDescr" */
 
-size_t sizeof_oid_if_get(void) {
-	return sizeof(oid_if_get);
-}
+size_t sizeof_oid_if_get(void) { return sizeof(oid_if_get); }
 
 char *oid_if_bintec[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0",
-								".1.3.6.1.2.1.2.2.1.2.0",
-								0}; /* "uptime", "ifNumber", "ifDescr" */
+						 ".1.3.6.1.2.1.2.2.1.2.0",
+						 0}; /* "uptime", "ifNumber", "ifDescr" */
 
-size_t sizeof_oid_if_bintec(void) {
-	return sizeof(oid_if_bintec);
-}
+size_t sizeof_oid_if_bintec(void) { return sizeof(oid_if_bintec); }
 
-char *oid_alias_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.18",
- 							0};							  /* "alias" */
-char *oid_alias_get[] = {".1.3.6.1.2.1.31.1.1.1.18.1", 0}; /* "alias" */
-char *oid_alias_bintec[] = {".1.3.6.1.2.1.31.1.1.1.18.0",
- 						   0};							   /* "alias" */
-char *oid_names_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.1", 0}; /* "name" */
-char *oid_names_get[] = {".1.3.6.1.2.1.31.1.1.1.1.1", 0};   /* "name" */
+char *oid_alias_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.18", 0};  /* "alias" */
+char *oid_alias_get[] = {".1.3.6.1.2.1.31.1.1.1.18.1", 0};	  /* "alias" */
+char *oid_alias_bintec[] = {".1.3.6.1.2.1.31.1.1.1.18.0", 0}; /* "alias" */
+char *oid_names_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.1", 0};	  /* "name" */
+char *oid_names_get[] = {".1.3.6.1.2.1.31.1.1.1.1.1", 0};	  /* "name" */
 char *oid_names_bintec[] = {".1.3.6.1.2.1.31.1.1.1.1.0",
-								   0}; /* "name - NOT TESTED!" */
+							0}; /* "name - NOT TESTED!" */
 
-char *oid_vals_default[] = {".1.3.6.1.2.1.2.2.1.7",	/* ifAdminStatus */
-								   ".1.3.6.1.2.1.2.2.1.8",	/* ifOperStatus */
-								   ".1.3.6.1.2.1.2.2.1.10", /* ifInOctets */
-								   ".1.3.6.1.2.1.2.2.1.13", /* ifInDiscards */
-								   ".1.3.6.1.2.1.2.2.1.14", /* ifInErrors */
-								   ".1.3.6.1.2.1.2.2.1.16", /* ifOutOctets */
-								   ".1.3.6.1.2.1.2.2.1.19", /* ifOutDiscards */
-								   ".1.3.6.1.2.1.2.2.1.20", /* ifOutErrors */
-								   0};
+char *oid_vals_default[] = {".1.3.6.1.2.1.2.2.1.7",	 /* ifAdminStatus */
+							".1.3.6.1.2.1.2.2.1.8",	 /* ifOperStatus */
+							".1.3.6.1.2.1.2.2.1.10", /* ifInOctets */
+							".1.3.6.1.2.1.2.2.1.13", /* ifInDiscards */
+							".1.3.6.1.2.1.2.2.1.14", /* ifInErrors */
+							".1.3.6.1.2.1.2.2.1.16", /* ifOutOctets */
+							".1.3.6.1.2.1.2.2.1.19", /* ifOutDiscards */
+							".1.3.6.1.2.1.2.2.1.20", /* ifOutErrors */
+							0};
 
-char *oid_vals_cisco[] = {
-	".1.3.6.1.2.1.2.2.1.7",		 /* ifAdminStatus */
-	".1.3.6.1.2.1.2.2.1.8",		 /* ifOperStatus */
-	".1.3.6.1.2.1.2.2.1.10",	 /* ifInOctets */
-	".1.3.6.1.2.1.2.2.1.13",	 /* ifInDiscards */
-	".1.3.6.1.4.1.9.2.2.1.1.12", /* locIfInCRC */
-	".1.3.6.1.2.1.2.2.1.16",	 /* ifOutOctets */
-	".1.3.6.1.2.1.2.2.1.19",	 /* ifOutDiscards */
-	".1.3.6.1.4.1.9.2.2.1.1.25", /* locIfCollisions */
-	0};
+char *oid_vals_cisco[] = {".1.3.6.1.2.1.2.2.1.7",	   /* ifAdminStatus */
+						  ".1.3.6.1.2.1.2.2.1.8",	   /* ifOperStatus */
+						  ".1.3.6.1.2.1.2.2.1.10",	   /* ifInOctets */
+						  ".1.3.6.1.2.1.2.2.1.13",	   /* ifInDiscards */
+						  ".1.3.6.1.4.1.9.2.2.1.1.12", /* locIfInCRC */
+						  ".1.3.6.1.2.1.2.2.1.16",	   /* ifOutOctets */
+						  ".1.3.6.1.2.1.2.2.1.19",	   /* ifOutDiscards */
+						  ".1.3.6.1.4.1.9.2.2.1.1.25", /* locIfCollisions */
+						  0};
 
-char *oid_extended[] = {".1.3.6.1.2.1.31.1.1.1.6",  /* ifHCInOctets */
-							   ".1.3.6.1.2.1.31.1.1.1.10", /* ifHCOutOctets */
-							   ".1.3.6.1.2.1.2.2.1.11",	   /* ifInUcastPkts */
-							   ".1.3.6.1.2.1.2.2.1.17",	   /* ifOutUcastPkts */
-							   ".1.3.6.1.2.1.2.2.1.5",	   /* ifSpeed */
-							   ".1.3.6.1.2.1.31.1.1.1.15", /* ifHighSpeed */
-							   ".1.3.6.1.2.1.31.1.1.1.18", /* alias */
-							   ".1.3.6.1.2.1.31.1.1.1.1",  /* name */
-							   0};
+char *oid_extended[] = {".1.3.6.1.2.1.31.1.1.1.6",	/* ifHCInOctets */
+						".1.3.6.1.2.1.31.1.1.1.10", /* ifHCOutOctets */
+						".1.3.6.1.2.1.2.2.1.11",	/* ifInUcastPkts */
+						".1.3.6.1.2.1.2.2.1.17",	/* ifOutUcastPkts */
+						".1.3.6.1.2.1.2.2.1.5",		/* ifSpeed */
+						".1.3.6.1.2.1.31.1.1.1.15", /* ifHighSpeed */
+						".1.3.6.1.2.1.31.1.1.1.18", /* alias */
+						".1.3.6.1.2.1.31.1.1.1.1",	/* name */
+						0};
 
 char *oid_extended_cisco[] = {
 	".1.3.6.1.4.1.9.5.1.4.1.1.23", /* portAdditionalOperStatus */
@@ -172,7 +161,6 @@ char default_community[] = "public";
  *  make non-posix code optional e.g. asprintf
  */
 
-
 /* uptime counter */
 unsigned int uptime = 0;
 unsigned int parsed_lastcheck = 0;
@@ -182,7 +170,6 @@ int ifNumber = 0;
 #ifdef DEBUG
 static char *implode_result;
 #endif
-
 
 void print64(struct counter64 *count64, unsigned long *count32) {
 

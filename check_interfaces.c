@@ -1,10 +1,9 @@
-#include <stdbool.h>
-#include <sys/time.h>
 #include "snmp_bulkget.h"
+#include "utils.h"
 #include <net-snmp/net-snmp-config.h>
 #include <stdbool.h>
+#include <sys/time.h>
 #include <unistd.h>
-#include "utils.h"
 
 /* uptime counter */
 extern unsigned int uptime;
@@ -30,9 +29,9 @@ extern char *oid_vals_cisco[];
 extern char *oid_extended[];
 extern char *oid_extended_cisco[];
 
-
 // Forward declarations
-void parse_and_check_commandline(int argc, char **argv, struct configuration_struct *config);
+void parse_and_check_commandline(int argc, char **argv,
+								 struct configuration_struct *config);
 
 int main(int argc, char *argv[]) {
 	netsnmp_session session, *ss;

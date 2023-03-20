@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
 				/* subsequent replies have no ifNumber */
 			}
 
-			for (vars = vars; vars; vars = vars->next_variable) {
+			for (; vars; vars = vars->next_variable) {
 				/*
 				 * if the next OID is shorter
 				 * or if the next OID doesn't begin with our base OID
@@ -411,7 +411,7 @@ int main(int argc, char *argv[]) {
 
 				vars = response->variables;
 
-				for (vars = vars; vars; vars = vars->next_variable) {
+				for (; vars; vars = vars->next_variable) {
 					/*
 					 * if the next OID is shorter
 					 * or if the next OID doesn't begin with our base OID
@@ -539,7 +539,7 @@ int main(int argc, char *argv[]) {
 
 				vars = response->variables;
 
-				for (vars = vars; vars; vars = vars->next_variable) {
+				for (; vars; vars = vars->next_variable) {
 					/*
 					 * if the next OID is shorter
 					 * or if the next OID doesn't begin with our base OID

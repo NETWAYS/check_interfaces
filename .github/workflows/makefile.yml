@@ -2,14 +2,34 @@ name: Makefile CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "*" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "*" ]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    env:
+      CFLAGS: "-Wall"
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo .github/prepare_ubuntu.sh
+
+    - name: configure
+      run: ./configure
+
+    - name: Make
+      run: make
+
+  clang-build:
+    runs-on: ubuntu-latest
+    env:
+      CC: clang
+      CFLAGS: "-Wall"
 
     steps:
     - uses: actions/checkout@v3

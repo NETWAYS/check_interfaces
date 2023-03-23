@@ -12,7 +12,6 @@ extern unsigned int parsed_lastcheck;
 extern int ifNumber;
 extern const char *modes[];
 
-extern char default_community[];
 extern char *if_vars_default[];
 extern char *if_vars_cisco[];
 extern char *oid_if_bulkget[];
@@ -28,6 +27,13 @@ extern char *oid_vals_default[];
 extern char *oid_vals_cisco[];
 extern char *oid_extended[];
 extern char *oid_extended_cisco[];
+
+
+#define DEFAULT_COMMUNITY "public"
+
+#ifdef DEBUG
+static char *implode_result;
+#endif
 
 enum returncode {
 	OK = 0,
@@ -64,7 +70,7 @@ int main(int argc, char *argv[]) {
 		.match_aliases_flag = false,
 		.get_names_flag = false,
 		.print_all_flag = false,
-		.community = default_community,
+		.community = DEFAULT_COMMUNITY,
 		.bandwith = 0,
 		.oldperfdatap = 0,
 		.err_tolerance = 50,
@@ -652,6 +658,7 @@ int main(int argc, char *argv[]) {
 	benchmark_start("Close SNMP session");
 #endif
 	snmp_close(ss);
+	snmp_close(&session);
 #ifdef DEBUG
 	benchmark_end();
 #endif
@@ -1347,7 +1354,7 @@ void parse_and_check_commandline(int argc, char **argv,
 #endif /* HAVE_GETADDRINFO */
 
 	if (!config->community)
-		config->community = default_community;
+		config->community = DEFAULT_COMMUNITY;
 
 	if (config->exclude_list && !config->iface_regex)
 		/* use .* as the default regex */

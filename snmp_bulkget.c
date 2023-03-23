@@ -68,6 +68,8 @@
 
 #include "snmp_bulkget.h"
 
+#include "utils.h"
+
 /*
  * operating modes
  */
@@ -149,7 +151,6 @@ char *oid_extended_cisco[] = {
 	".1.3.6.1.4.1.9.5.1.4.1.1.23", /* portAdditionalOperStatus */
 	0};
 
-char default_community[] = "public";
 
 /* we assume that the index number is the same as the last digit of the OID
  * which may not always hold true...

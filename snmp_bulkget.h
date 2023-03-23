@@ -98,7 +98,7 @@ typedef struct configuration_struct {
 	unsigned int trimdescr;
 	enum mode_enum mode; // hardware mode
 	char *prefix;
-	char *list;
+	char *iface_regex;
 	unsigned long global_timeout;
 	char *exclude_list;
 	u64 speed;

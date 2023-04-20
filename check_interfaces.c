@@ -13,20 +13,64 @@ extern int ifNumber;
 
 extern char *if_vars_default[];
 extern char *if_vars_cisco[];
-extern char *oid_if_bulkget[];
-extern char *oid_if_get[];
-extern char *oid_if_bintec[];
-extern char *oid_alias_bulkget[];
-extern char *oid_alias_get[];
-extern char *oid_alias_bintec[];
-extern char *oid_names_bulkget[];
-extern char *oid_names_get[];
-extern char *oid_names_bintec[];
-extern char *oid_vals_default[];
-extern char *oid_vals_cisco[];
-extern char *oid_extended[];
-extern char *oid_extended_cisco[];
 
+/*
+ * OIDs, hardcoded to remove the dependency on MIBs
+ */
+char *oid_if_bulkget[] = {".1.3.6.1.2.1.1.3", ".1.3.6.1.2.1.2.1",
+						  ".1.3.6.1.2.1.2.2.1.2",
+						  0}; /* "uptime", "ifNumber", "ifDescr" */
+
+char *oid_if_get[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0",
+					  ".1.3.6.1.2.1.2.2.1.2.1",
+					  0}; /* "uptime", "ifNumber", "ifDescr" */
+
+char *oid_if_bintec[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0",
+						 ".1.3.6.1.2.1.2.2.1.2.0",
+						 0}; /* "uptime", "ifNumber", "ifDescr" */
+
+char *oid_extended[] = {".1.3.6.1.2.1.31.1.1.1.6",	/* ifHCInOctets */
+						".1.3.6.1.2.1.31.1.1.1.10", /* ifHCOutOctets */
+						".1.3.6.1.2.1.2.2.1.11",	/* ifInUcastPkts */
+						".1.3.6.1.2.1.2.2.1.17",	/* ifOutUcastPkts */
+						".1.3.6.1.2.1.2.2.1.5",		/* ifSpeed */
+						".1.3.6.1.2.1.31.1.1.1.15", /* ifHighSpeed */
+						".1.3.6.1.2.1.31.1.1.1.18", /* alias */
+						".1.3.6.1.2.1.31.1.1.1.1",	/* name */
+						0};
+
+char *oid_alias_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.18", 0};  /* "alias" */
+char *oid_alias_get[] = {".1.3.6.1.2.1.31.1.1.1.18.1", 0};	  /* "alias" */
+char *oid_alias_bintec[] = {".1.3.6.1.2.1.31.1.1.1.18.0", 0}; /* "alias" */
+char *oid_names_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.1", 0};	  /* "name" */
+
+char *oid_names_get[] = {".1.3.6.1.2.1.31.1.1.1.1.1", 0};	  /* "name" */
+char *oid_names_bintec[] = {".1.3.6.1.2.1.31.1.1.1.1.0",
+							0}; /* "name - NOT TESTED!" */
+
+char *oid_extended_cisco[] = {
+	".1.3.6.1.4.1.9.5.1.4.1.1.23", /* portAdditionalOperStatus */
+	0};
+
+char *oid_vals_default[] = {".1.3.6.1.2.1.2.2.1.7",	 /* ifAdminStatus */
+							".1.3.6.1.2.1.2.2.1.8",	 /* ifOperStatus */
+							".1.3.6.1.2.1.2.2.1.10", /* ifInOctets */
+							".1.3.6.1.2.1.2.2.1.13", /* ifInDiscards */
+							".1.3.6.1.2.1.2.2.1.14", /* ifInErrors */
+							".1.3.6.1.2.1.2.2.1.16", /* ifOutOctets */
+							".1.3.6.1.2.1.2.2.1.19", /* ifOutDiscards */
+							".1.3.6.1.2.1.2.2.1.20", /* ifOutErrors */
+							0};
+
+char *oid_vals_cisco[] = {".1.3.6.1.2.1.2.2.1.7",	   /* ifAdminStatus */
+						  ".1.3.6.1.2.1.2.2.1.8",	   /* ifOperStatus */
+						  ".1.3.6.1.2.1.2.2.1.10",	   /* ifInOctets */
+						  ".1.3.6.1.2.1.2.2.1.13",	   /* ifInDiscards */
+						  ".1.3.6.1.4.1.9.2.2.1.1.12", /* locIfInCRC */
+						  ".1.3.6.1.2.1.2.2.1.16",	   /* ifOutOctets */
+						  ".1.3.6.1.2.1.2.2.1.19",	   /* ifOutDiscards */
+						  ".1.3.6.1.4.1.9.2.2.1.1.25", /* locIfCollisions */
+						  0};
 
 #define DEFAULT_COMMUNITY "public"
 
@@ -152,17 +196,17 @@ int main(int argc, char *argv[]) {
 
 	if (config.mode == NONBULK) {
 		oid_ifp = oid_if_get;
-		size = (sizeof_oid_if_get() / sizeof(char *)) - 1;
+		size = (sizeof(oid_if_get) / sizeof(char *)) - 1;
 		oid_aliasp = oid_alias_get;
 		oid_namesp = oid_names_get;
 	} else if (config.mode == BINTEC) {
 		oid_ifp = oid_if_bintec;
-		size = (sizeof_oid_if_bintec() / sizeof(char *)) - 1;
+		size = (sizeof(oid_if_bintec) / sizeof(char *)) - 1;
 		oid_aliasp = oid_alias_bintec;
 		oid_namesp = oid_names_bintec;
 	} else {
 		oid_ifp = oid_if_bulkget;
-		size = (sizeof_oid_if_bulkget() / sizeof(char *)) - 1;
+		size = (sizeof(oid_if_bulkget) / sizeof(char *)) - 1;
 		oid_aliasp = oid_alias_bulkget;
 		oid_namesp = oid_names_bulkget;
 	}

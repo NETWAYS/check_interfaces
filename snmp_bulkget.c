@@ -71,11 +71,6 @@
 #include "utils.h"
 
 /*
- * operating modes
- */
-const char *modes[] = {"default", "cisco", "nonbulk", "bintec", NULL};
-
-/*
  * text strings to output in the perfdata
  */
 
@@ -362,63 +357,6 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user,
 	}
 
 	return (ss);
-}
-
-int usage(char *progname) {
-	int i;
-	printf(
-#ifdef PACKAGE_STRING
-		PACKAGE_STRING "\n\n"
-#endif
-					   "Usage: %s -h <hostname> [OPTIONS]\n",
-		progname);
-
-	printf(" -c|--community\t\tcommunity (default public)\n");
-	printf(" -r|--regex\t\tinterface list regexp\n");
-	printf(" -R|--exclude-regex\tinterface list negative regexp\n");
-	printf(" -e|--errors\t\tnumber of in errors (CRC errors for cisco) to "
-		   "consider a warning (default 50)\n");
-	printf(" -f|--out-errors\tnumber of out errors (collisions for cisco) to "
-		   "consider a warning (default same as in errors)\n");
-	printf(" -p|--perfdata\t\tlast check perfdata\n");
-	printf(" -P|--prefix\t\tprefix interface names with this label\n");
-	printf(" -t|--lastcheck\t\tlast checktime (unixtime)\n");
-	printf(" -b|--bandwidth\t\tbandwidth warn level in %%\n");
-	printf(" -s|--speed\t\toverride speed detection with this value (bits per "
-		   "sec)\n");
-	printf(" -x|--trim\t\tcut this number of characters from the start of "
-		   "interface descriptions\n");
-	printf(" -m|--mode\t\tspecial operating mode (");
-	for (i = 0; modes[i]; i++) {
-		printf("%s%s", i ? "," : "", modes[i]);
-	}
-	printf(")\n");
-	printf(" -j|--auth-proto\tSNMPv3 Auth Protocol (SHA|MD5)\n");
-	printf(" -J|--auth-phrase\tSNMPv3 Auth Phrase\n");
-#ifdef usmDESPrivProtocol
-	printf(
-		" -k|--priv-proto\tSNMPv3 Privacy Protocol (AES|DES), unset means not "
-		"privacy protocol!\n");
-#else
-	printf(" -k|--priv-proto\tSNMPv3 Privacy Protocol (AES), unset means not "
-		   "privacy protocol!\n");
-#endif
-	printf(" -K|--priv-phrase\tSNMPv3 Privacy Phrase\n");
-	printf(" -u|--user\t\tSNMPv3 User\n");
-	printf(" -d|--down-is-ok\tdisables critical alerts for down interfaces\n");
-	printf(" -a|--aliases\t\tretrieves the interface description\n");
-	printf(" -A|--match-aliases\talso match against aliases (Option -a "
-		   "automatically enabled)\n");
-	printf(
-		" -D|--debug-print\tlist administrative down interfaces in perfdata\n");
-	printf(" -N|--if-names\t\tuse ifName instead of ifDescr\n");
-	printf("    --timeout\t\tsets the SNMP timeout (in ms)\n");
-	printf("    --sleep\t\tsleep between every SNMP query (in ms)\n");
-	printf("    --retries\t\thow often to retry before giving up\n");
-	printf("    --max-repetitions\t\tsee "
-		   "<http://www.net-snmp.org/docs/man/snmpbulkwalk.html>\n");
-	printf("\n");
-	return 3;
 }
 
 /*

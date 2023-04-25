@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
 	 * is necessary to work around buggy switches that lie about the ifNumber
 	 */
 
-	for (bool lastifflag = false; lastifflag == true;) {
+	for (bool lastifflag = false; lastifflag != true;) {
 
 		/* build our request depending on the mode */
 		if (count == 0)

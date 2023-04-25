@@ -5,8 +5,6 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-/* uptime counter */
-unsigned int uptime = 0;
 unsigned int parsed_lastcheck = 0;
 
 int ifNumber = 0;
@@ -99,7 +97,7 @@ bool fetch_interface_aliases(struct configuration_struct* , char **, netsnmp_ses
 bool fetch_interface_names(struct configuration_struct* , char **oid_namesp, netsnmp_session *ss, netsnmp_session *session, struct ifStruct *interfaces);
 returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata,
 		long double starttime, struct ifStruct *interfaces, String *out, char **if_vars,
-		unsigned int number_of_matched_interfaces, struct timeval *tv);
+		unsigned int number_of_matched_interfaces, struct timeval *tv, int uptime);
 
 int main(int argc, char *argv[]) {
 	netsnmp_session session, *ss;
@@ -111,6 +109,9 @@ int main(int argc, char *argv[]) {
 	int count = 0; /* used for: the number of interfaces we receive, the number
 					  of regex matches */
 	size_t size;
+
+	/* uptime counter */
+	unsigned int uptime = 0;
 
 	struct configuration_struct config = {
 		.crit_on_down_flag = true,
@@ -699,7 +700,7 @@ int main(int argc, char *argv[]) {
 
 	gettimeofday(&tv, &tz);
 
-	returncode_t exit_code = print_output(&config, oldperfdata, starttime, interfaces, &out, if_vars, count, &tv);
+	returncode_t exit_code = print_output(&config, oldperfdata, starttime, interfaces, &out, if_vars, count, &tv, uptime);
 
 
 #ifdef DEBUG
@@ -717,7 +718,7 @@ int main(int argc, char *argv[]) {
 
 returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata,
 		long double starttime, struct ifStruct *interfaces, String *out, char **if_vars,
-		unsigned int number_of_matched_interfaces, struct timeval *tv) {
+		unsigned int number_of_matched_interfaces, struct timeval *tv, int uptime) {
 	if (config->oldperfdatap && config->oldperfdatap[0])
 		parse_perfdata(config->oldperfdatap, oldperfdata, config->prefix,
 					   &parsed_lastcheck, config->mode, ifNumber);

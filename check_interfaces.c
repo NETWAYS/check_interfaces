@@ -5,9 +5,6 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-
-int ifNumber = 0;
-
 extern char *if_vars_default[];
 extern char *if_vars_cisco[];
 
@@ -92,11 +89,12 @@ typedef enum returncode returncode_t;
 // Forward declarations
 void parse_and_check_commandline(int argc, char **argv,
 								 struct configuration_struct *config);
-bool fetch_interface_aliases(struct configuration_struct* , char **, netsnmp_session *ss, netsnmp_session *session, struct ifStruct *interfaces);
-bool fetch_interface_names(struct configuration_struct* , char **oid_namesp, netsnmp_session *ss, netsnmp_session *session, struct ifStruct *interfaces);
+bool fetch_interface_aliases(struct configuration_struct* , char **, netsnmp_session *ss, netsnmp_session *session, struct ifStruct *interfaces, int ifNumber);
+bool fetch_interface_names(struct configuration_struct* , char **oid_namesp, netsnmp_session *ss, netsnmp_session *session, struct ifStruct *interfaces, int ifNumber);
 returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata,
 		long double starttime, struct ifStruct *interfaces, String *out, char **if_vars,
-		unsigned int number_of_matched_interfaces, struct timeval *tv, int uptime);
+		unsigned int number_of_matched_interfaces, struct timeval *tv, int uptime,
+		int ifNumber);
 
 int main(int argc, char *argv[]) {
 	netsnmp_session session, *ss;
@@ -111,6 +109,8 @@ int main(int argc, char *argv[]) {
 
 	/* uptime counter */
 	unsigned int uptime = 0;
+
+	int ifNumber = 0;
 
 	struct configuration_struct config = {
 		.crit_on_down_flag = true,
@@ -425,7 +425,7 @@ int main(int argc, char *argv[]) {
 	 */
 
 	if (config.match_aliases_flag && config.iface_regex) {
-		fetch_interface_aliases(&config, oid_aliasp, ss, &session, interfaces);
+		fetch_interface_aliases(&config, oid_aliasp, ss, &session, interfaces, ifNumber);
 	}
 
 	/* If the get_names_flag is set, we also have to get the interface names so
@@ -436,7 +436,7 @@ int main(int argc, char *argv[]) {
 	 * way
 	 * :-) */
 	if (config.get_names_flag && config.iface_regex) {
-		fetch_interface_names(&config, oid_namesp, ss, &session, interfaces);
+		fetch_interface_names(&config, oid_namesp, ss, &session, interfaces, ifNumber);
 	}
 
 	if (config.iface_regex) {
@@ -699,7 +699,7 @@ int main(int argc, char *argv[]) {
 
 	gettimeofday(&tv, &tz);
 
-	returncode_t exit_code = print_output(&config, oldperfdata, starttime, interfaces, &out, if_vars, count, &tv, uptime);
+	returncode_t exit_code = print_output(&config, oldperfdata, starttime, interfaces, &out, if_vars, count, &tv, uptime, ifNumber);
 
 
 #ifdef DEBUG
@@ -717,7 +717,8 @@ int main(int argc, char *argv[]) {
 
 returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata,
 		long double starttime, struct ifStruct *interfaces, String *out, char **if_vars,
-		unsigned int number_of_matched_interfaces, struct timeval *tv, int uptime) {
+		unsigned int number_of_matched_interfaces, struct timeval *tv, int uptime,
+		int ifNumber) {
 
 	unsigned int parsed_lastcheck = 0;
 
@@ -985,7 +986,8 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 }
 
 bool fetch_interface_aliases(struct configuration_struct* config, char **oid_aliasp,
-		netsnmp_session *ss, netsnmp_session *session, struct ifStruct *interfaces) {
+		netsnmp_session *ss, netsnmp_session *session, struct ifStruct *interfaces,
+		int ifNumber) {
 	bool lastifflag = false;
 	int count = 0;
 	netsnmp_pdu *pdu;
@@ -1112,7 +1114,7 @@ bool fetch_interface_aliases(struct configuration_struct* config, char **oid_ali
 	return true;
 }
 
-bool fetch_interface_names(struct configuration_struct* config, char **oid_namesp, netsnmp_session *ss, netsnmp_session *session, struct ifStruct *interfaces) {
+bool fetch_interface_names(struct configuration_struct* config, char **oid_namesp, netsnmp_session *ss, netsnmp_session *session, struct ifStruct *interfaces, int ifNumber) {
 	bool lastifflag = false;
 	netsnmp_pdu *pdu;
 	struct OIDStruct lastOid;

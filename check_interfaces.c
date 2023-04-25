@@ -5,7 +5,6 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-unsigned int parsed_lastcheck = 0;
 
 int ifNumber = 0;
 
@@ -719,6 +718,9 @@ int main(int argc, char *argv[]) {
 returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata,
 		long double starttime, struct ifStruct *interfaces, String *out, char **if_vars,
 		unsigned int number_of_matched_interfaces, struct timeval *tv, int uptime) {
+
+	unsigned int parsed_lastcheck = 0;
+
 	if (config->oldperfdatap && config->oldperfdatap[0])
 		parse_perfdata(config->oldperfdatap, oldperfdata, config->prefix,
 					   &parsed_lastcheck, config->mode, ifNumber);

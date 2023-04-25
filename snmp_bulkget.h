@@ -119,7 +119,7 @@ size_t sizeof_oid_if_bulkget(void);
 
 void print64(struct counter64 *, unsigned long *);
 u64 convertto64(struct counter64 *, unsigned long *);
-u64 subtract64(u64, u64, unsigned int lastcheck);
+u64 subtract64(u64, u64, unsigned int lastcheck, int uptime);
 netsnmp_session *start_session(netsnmp_session *, char *, char *,
 							   enum mode_enum, unsigned long global_timeout,
 							   int session_retries);
@@ -129,8 +129,8 @@ netsnmp_session *start_session_v3(netsnmp_session *, char *, char *, char *,
 								  int session_retries);
 int usage(char *);
 int parse_perfdata(char *, struct ifStruct *, char *, unsigned int *,
-				   enum mode_enum);
-void set_value(struct ifStruct *, char *, char *, u64, enum mode_enum);
+				   enum mode_enum, int ifNumber);
+void set_value(struct ifStruct *, char *, char *, u64, enum mode_enum, int ifNumber);
 int parseoids(int, char *, struct OIDStruct *);
 int create_request(netsnmp_session *, struct OIDStruct **, char **, int,
 				   netsnmp_pdu **, unsigned int sleep_usecs);

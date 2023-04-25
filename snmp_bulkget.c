@@ -94,11 +94,7 @@ char *if_vars_cisco[] = {"inOctets",	"outOctets", "inDiscards",
  *  make non-posix code optional e.g. asprintf
  */
 
-/* uptime counter */
-unsigned int uptime = 0;
-unsigned int parsed_lastcheck = 0;
 
-int ifNumber = 0;
 
 #ifdef DEBUG
 static char *implode_result;
@@ -137,7 +133,7 @@ u64 convertto64(struct counter64 *val64, unsigned long *val32) {
 	return (temp64);
 }
 
-u64 subtract64(u64 big64, u64 small64, unsigned int lastcheck) {
+u64 subtract64(u64 big64, u64 small64, unsigned int lastcheck, int uptime) {
 	if (big64 < small64) {
 		/* either the device was reset or the counter overflowed
 		 */
@@ -309,7 +305,7 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user,
  */
 int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
 				   char *prefix, unsigned int *parsed_lastcheck,
-				   enum mode_enum mode) {
+				   enum mode_enum mode, int ifNumber) {
 	char *last = 0, *last2 = 0, *word, *interface = 0, *var;
 	char *ptr;
 #ifdef DEBUG
@@ -374,7 +370,7 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
 		var = strtok_r(word, "=", &last2);
 
 		if (interface && var && valstr)
-			set_value(oldperfdata, interface, var, value, mode);
+			set_value(oldperfdata, interface, var, value, mode, ifNumber);
 	}
 
 	return (0);
@@ -384,7 +380,7 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
  * fill the ifStruct with values
  */
 void set_value(struct ifStruct *oldperfdata, char *interface, char *var,
-			   u64 value, enum mode_enum mode) {
+			   u64 value, enum mode_enum mode, int ifNumber) {
 	int i;
 	static char **if_vars;
 

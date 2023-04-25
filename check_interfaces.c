@@ -6,10 +6,10 @@
 #include <unistd.h>
 
 /* uptime counter */
-extern unsigned int uptime;
-extern unsigned int parsed_lastcheck;
+unsigned int uptime = 0;
+unsigned int parsed_lastcheck = 0;
 
-extern int ifNumber;
+int ifNumber = 0;
 
 extern char *if_vars_default[];
 extern char *if_vars_cisco[];
@@ -720,7 +720,7 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 		unsigned int number_of_matched_interfaces, struct timeval *tv) {
 	if (config->oldperfdatap && config->oldperfdatap[0])
 		parse_perfdata(config->oldperfdatap, oldperfdata, config->prefix,
-					   &parsed_lastcheck, config->mode);
+					   &parsed_lastcheck, config->mode, ifNumber);
 
 	if (config->lastcheck)
 		config->lastcheck = (starttime - config->lastcheck);
@@ -867,12 +867,12 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 				(oldperfdata[i].inOctets || oldperfdata[i].outOctets)) {
 				interfaces[i].inbitps =
 					(subtract64(interfaces[i].inOctets, oldperfdata[i].inOctets,
-								config->lastcheck) /
+								config->lastcheck, uptime) /
 					 (u64)config->lastcheck) *
 					8ULL;
 				interfaces[i].outbitps =
 					(subtract64(interfaces[i].outOctets,
-								oldperfdata[i].outOctets, config->lastcheck) /
+								oldperfdata[i].outOctets, config->lastcheck, uptime) /
 					 (u64)config->lastcheck) *
 					8ULL;
 				if (config->speed) {

@@ -5,8 +5,18 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-extern char *if_vars_default[];
-extern char *if_vars_cisco[];
+/*
+ * text strings to output in the perfdata
+ */
+
+char *if_vars_default[] = {"inOctets", "outOctets", "inDiscards", "outDiscards",
+						   "inErrors", "outErrors", "inUcast",	  "outUcast",
+						   "speed",	   "inBitps",	"outBitps"};
+
+char *if_vars_cisco[] = {"inOctets",	"outOctets", "inDiscards",
+						 "outDiscards", "inCRCs",	 "outCollisions",
+						 "inUcast",		"outUcast",	 "speed",
+						 "inBitps",		"outBitps"};
 
 /*
  * OIDs, hardcoded to remove the dependency on MIBs
@@ -724,7 +734,7 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 
 	if (config->oldperfdatap && config->oldperfdatap[0])
 		parse_perfdata(config->oldperfdatap, oldperfdata, config->prefix,
-					   &parsed_lastcheck, config->mode, ifNumber);
+					   &parsed_lastcheck, config->mode, ifNumber, if_vars);
 
 	if (config->lastcheck)
 		config->lastcheck = (starttime - config->lastcheck);

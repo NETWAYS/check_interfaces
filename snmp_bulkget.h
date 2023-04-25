@@ -129,8 +129,9 @@ netsnmp_session *start_session_v3(netsnmp_session *, char *, char *, char *,
 								  int session_retries);
 int usage(char *);
 int parse_perfdata(char *, struct ifStruct *, char *, unsigned int *,
-				   enum mode_enum, int ifNumber);
-void set_value(struct ifStruct *, char *, char *, u64, enum mode_enum, int ifNumber);
+				   enum mode_enum, int ifNumber, char *perfdata_lables[]);
+void set_value(struct ifStruct *, char *, char *, u64, enum mode_enum, int ifNumber,
+		char *if_vars[]);
 int parseoids(int, char *, struct OIDStruct *);
 int create_request(netsnmp_session *, struct OIDStruct **, char **, int,
 				   netsnmp_pdu **, unsigned int sleep_usecs);

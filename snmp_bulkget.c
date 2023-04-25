@@ -70,20 +70,6 @@
 
 #include "utils.h"
 
-/*
- * text strings to output in the perfdata
- */
-
-char *if_vars_default[] = {"inOctets", "outOctets", "inDiscards", "outDiscards",
-						   "inErrors", "outErrors", "inUcast",	  "outUcast",
-						   "speed",	   "inBitps",	"outBitps"};
-
-char *if_vars_cisco[] = {"inOctets",	"outOctets", "inDiscards",
-						 "outDiscards", "inCRCs",	 "outCollisions",
-						 "inUcast",		"outUcast",	 "speed",
-						 "inBitps",		"outBitps"};
-
-
 /* we assume that the index number is the same as the last digit of the OID
  * which may not always hold true...
  * but seems to do so in practice
@@ -305,7 +291,8 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user,
  */
 int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
 				   char *prefix, unsigned int *parsed_lastcheck,
-				   enum mode_enum mode, int ifNumber) {
+				   enum mode_enum mode, int ifNumber,
+					 char *perfdata_labels[]) {
 	char *last = 0, *last2 = 0, *word, *interface = 0, *var;
 	char *ptr;
 #ifdef DEBUG
@@ -370,7 +357,7 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
 		var = strtok_r(word, "=", &last2);
 
 		if (interface && var && valstr)
-			set_value(oldperfdata, interface, var, value, mode, ifNumber);
+			set_value(oldperfdata, interface, var, value, mode, ifNumber, perfdata_labels);
 	}
 
 	return (0);
@@ -380,14 +367,8 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
  * fill the ifStruct with values
  */
 void set_value(struct ifStruct *oldperfdata, char *interface, char *var,
-			   u64 value, enum mode_enum mode, int ifNumber) {
+			   u64 value, enum mode_enum mode, int ifNumber, char *if_vars[]) {
 	int i;
-	static char **if_vars;
-
-	if (mode == CISCO)
-		if_vars = if_vars_cisco;
-	else
-		if_vars = if_vars_default;
 
 	for (i = 0; i < ifNumber; i++) {
 		if (strcmp(interface, oldperfdata[i].descr) == 0) {

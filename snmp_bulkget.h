@@ -108,7 +108,7 @@ typedef struct configuration_struct {
 	long pdu_max_repetitions;
 	regex_t re;
 	regex_t exclude_re;
-} config;
+} config_t;
 
 /*
  * prototypes

@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
 
 	int ifNumber = 0;
 
-	struct configuration_struct config = {
+	 config_t config = {
 		.crit_on_down_flag = true,
 		.get_aliases_flag = false,
 		.match_aliases_flag = false,
@@ -159,14 +159,12 @@ int main(int argc, char *argv[]) {
 	long double starttime;
 	int ignore_count = 0;
 
-
 	char outstr[MAX_STRING];
 	memset(outstr, 0, sizeof(outstr));
 	String out;
 	out.max = MAX_STRING;
 	out.len = 0;
 	out.text = outstr;
-
 
 	struct OIDStruct lastOid;
 

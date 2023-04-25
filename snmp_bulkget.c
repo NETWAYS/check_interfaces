@@ -68,88 +68,7 @@
 
 #include "snmp_bulkget.h"
 
-/*
- * operating modes
- */
-const char *modes[] = {"default", "cisco", "nonbulk", "bintec", NULL};
-
-/*
- * text strings to output in the perfdata
- */
-
-char *if_vars_default[] = {"inOctets", "outOctets", "inDiscards", "outDiscards",
-						   "inErrors", "outErrors", "inUcast",	  "outUcast",
-						   "speed",	   "inBitps",	"outBitps"};
-
-char *if_vars_cisco[] = {"inOctets",	"outOctets", "inDiscards",
-						 "outDiscards", "inCRCs",	 "outCollisions",
-						 "inUcast",		"outUcast",	 "speed",
-						 "inBitps",		"outBitps"};
-
-/*
- * OIDs, hardcoded to remove the dependency on MIBs
- */
-char *oid_if_bulkget[] = {".1.3.6.1.2.1.1.3", ".1.3.6.1.2.1.2.1",
-						  ".1.3.6.1.2.1.2.2.1.2",
-						  0}; /* "uptime", "ifNumber", "ifDescr" */
-
-size_t sizeof_oid_if_bulkget(void) { return sizeof(oid_if_bulkget); }
-
-char *oid_if_get[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0",
-					  ".1.3.6.1.2.1.2.2.1.2.1",
-					  0}; /* "uptime", "ifNumber", "ifDescr" */
-
-size_t sizeof_oid_if_get(void) { return sizeof(oid_if_get); }
-
-char *oid_if_bintec[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0",
-						 ".1.3.6.1.2.1.2.2.1.2.0",
-						 0}; /* "uptime", "ifNumber", "ifDescr" */
-
-size_t sizeof_oid_if_bintec(void) { return sizeof(oid_if_bintec); }
-
-char *oid_alias_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.18", 0};  /* "alias" */
-char *oid_alias_get[] = {".1.3.6.1.2.1.31.1.1.1.18.1", 0};	  /* "alias" */
-char *oid_alias_bintec[] = {".1.3.6.1.2.1.31.1.1.1.18.0", 0}; /* "alias" */
-char *oid_names_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.1", 0};	  /* "name" */
-char *oid_names_get[] = {".1.3.6.1.2.1.31.1.1.1.1.1", 0};	  /* "name" */
-char *oid_names_bintec[] = {".1.3.6.1.2.1.31.1.1.1.1.0",
-							0}; /* "name - NOT TESTED!" */
-
-char *oid_vals_default[] = {".1.3.6.1.2.1.2.2.1.7",	 /* ifAdminStatus */
-							".1.3.6.1.2.1.2.2.1.8",	 /* ifOperStatus */
-							".1.3.6.1.2.1.2.2.1.10", /* ifInOctets */
-							".1.3.6.1.2.1.2.2.1.13", /* ifInDiscards */
-							".1.3.6.1.2.1.2.2.1.14", /* ifInErrors */
-							".1.3.6.1.2.1.2.2.1.16", /* ifOutOctets */
-							".1.3.6.1.2.1.2.2.1.19", /* ifOutDiscards */
-							".1.3.6.1.2.1.2.2.1.20", /* ifOutErrors */
-							0};
-
-char *oid_vals_cisco[] = {".1.3.6.1.2.1.2.2.1.7",	   /* ifAdminStatus */
-						  ".1.3.6.1.2.1.2.2.1.8",	   /* ifOperStatus */
-						  ".1.3.6.1.2.1.2.2.1.10",	   /* ifInOctets */
-						  ".1.3.6.1.2.1.2.2.1.13",	   /* ifInDiscards */
-						  ".1.3.6.1.4.1.9.2.2.1.1.12", /* locIfInCRC */
-						  ".1.3.6.1.2.1.2.2.1.16",	   /* ifOutOctets */
-						  ".1.3.6.1.2.1.2.2.1.19",	   /* ifOutDiscards */
-						  ".1.3.6.1.4.1.9.2.2.1.1.25", /* locIfCollisions */
-						  0};
-
-char *oid_extended[] = {".1.3.6.1.2.1.31.1.1.1.6",	/* ifHCInOctets */
-						".1.3.6.1.2.1.31.1.1.1.10", /* ifHCOutOctets */
-						".1.3.6.1.2.1.2.2.1.11",	/* ifInUcastPkts */
-						".1.3.6.1.2.1.2.2.1.17",	/* ifOutUcastPkts */
-						".1.3.6.1.2.1.2.2.1.5",		/* ifSpeed */
-						".1.3.6.1.2.1.31.1.1.1.15", /* ifHighSpeed */
-						".1.3.6.1.2.1.31.1.1.1.18", /* alias */
-						".1.3.6.1.2.1.31.1.1.1.1",	/* name */
-						0};
-
-char *oid_extended_cisco[] = {
-	".1.3.6.1.4.1.9.5.1.4.1.1.23", /* portAdditionalOperStatus */
-	0};
-
-char default_community[] = "public";
+#include "utils.h"
 
 /* we assume that the index number is the same as the last digit of the OID
  * which may not always hold true...
@@ -161,11 +80,7 @@ char default_community[] = "public";
  *  make non-posix code optional e.g. asprintf
  */
 
-/* uptime counter */
-unsigned int uptime = 0;
-unsigned int parsed_lastcheck = 0;
 
-int ifNumber = 0;
 
 #ifdef DEBUG
 static char *implode_result;
@@ -204,7 +119,7 @@ u64 convertto64(struct counter64 *val64, unsigned long *val32) {
 	return (temp64);
 }
 
-u64 subtract64(u64 big64, u64 small64, unsigned int lastcheck) {
+u64 subtract64(u64 big64, u64 small64, unsigned int lastcheck, int uptime) {
 	if (big64 < small64) {
 		/* either the device was reset or the counter overflowed
 		 */
@@ -363,63 +278,6 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user,
 	return (ss);
 }
 
-int usage(char *progname) {
-	int i;
-	printf(
-#ifdef PACKAGE_STRING
-		PACKAGE_STRING "\n\n"
-#endif
-					   "Usage: %s -h <hostname> [OPTIONS]\n",
-		progname);
-
-	printf(" -c|--community\t\tcommunity (default public)\n");
-	printf(" -r|--regex\t\tinterface list regexp\n");
-	printf(" -R|--exclude-regex\tinterface list negative regexp\n");
-	printf(" -e|--errors\t\tnumber of in errors (CRC errors for cisco) to "
-		   "consider a warning (default 50)\n");
-	printf(" -f|--out-errors\tnumber of out errors (collisions for cisco) to "
-		   "consider a warning (default same as in errors)\n");
-	printf(" -p|--perfdata\t\tlast check perfdata\n");
-	printf(" -P|--prefix\t\tprefix interface names with this label\n");
-	printf(" -t|--lastcheck\t\tlast checktime (unixtime)\n");
-	printf(" -b|--bandwidth\t\tbandwidth warn level in %%\n");
-	printf(" -s|--speed\t\toverride speed detection with this value (bits per "
-		   "sec)\n");
-	printf(" -x|--trim\t\tcut this number of characters from the start of "
-		   "interface descriptions\n");
-	printf(" -m|--mode\t\tspecial operating mode (");
-	for (i = 0; modes[i]; i++) {
-		printf("%s%s", i ? "," : "", modes[i]);
-	}
-	printf(")\n");
-	printf(" -j|--auth-proto\tSNMPv3 Auth Protocol (SHA|MD5)\n");
-	printf(" -J|--auth-phrase\tSNMPv3 Auth Phrase\n");
-#ifdef usmDESPrivProtocol
-	printf(
-		" -k|--priv-proto\tSNMPv3 Privacy Protocol (AES|DES), unset means not "
-		"privacy protocol!\n");
-#else
-	printf(" -k|--priv-proto\tSNMPv3 Privacy Protocol (AES), unset means not "
-		   "privacy protocol!\n");
-#endif
-	printf(" -K|--priv-phrase\tSNMPv3 Privacy Phrase\n");
-	printf(" -u|--user\t\tSNMPv3 User\n");
-	printf(" -d|--down-is-ok\tdisables critical alerts for down interfaces\n");
-	printf(" -a|--aliases\t\tretrieves the interface description\n");
-	printf(" -A|--match-aliases\talso match against aliases (Option -a "
-		   "automatically enabled)\n");
-	printf(
-		" -D|--debug-print\tlist administrative down interfaces in perfdata\n");
-	printf(" -N|--if-names\t\tuse ifName instead of ifDescr\n");
-	printf("    --timeout\t\tsets the SNMP timeout (in ms)\n");
-	printf("    --sleep\t\tsleep between every SNMP query (in ms)\n");
-	printf("    --retries\t\thow often to retry before giving up\n");
-	printf("    --max-repetitions\t\tsee "
-		   "<http://www.net-snmp.org/docs/man/snmpbulkwalk.html>\n");
-	printf("\n");
-	return 3;
-}
-
 /*
  * tokenize a string containing performance data and fill a struct with
  * the individual variables
@@ -433,7 +291,8 @@ int usage(char *progname) {
  */
 int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
 				   char *prefix, unsigned int *parsed_lastcheck,
-				   enum mode_enum mode) {
+				   enum mode_enum mode, int ifNumber,
+					 char *perfdata_labels[]) {
 	char *last = 0, *last2 = 0, *word, *interface = 0, *var;
 	char *ptr;
 #ifdef DEBUG
@@ -498,7 +357,7 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
 		var = strtok_r(word, "=", &last2);
 
 		if (interface && var && valstr)
-			set_value(oldperfdata, interface, var, value, mode);
+			set_value(oldperfdata, interface, var, value, mode, ifNumber, perfdata_labels);
 	}
 
 	return (0);
@@ -508,14 +367,8 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
  * fill the ifStruct with values
  */
 void set_value(struct ifStruct *oldperfdata, char *interface, char *var,
-			   u64 value, enum mode_enum mode) {
+			   u64 value, enum mode_enum mode, int ifNumber, char *if_vars[]) {
 	int i;
-	static char **if_vars;
-
-	if (mode == CISCO)
-		if_vars = if_vars_cisco;
-	else
-		if_vars = if_vars_default;
 
 	for (i = 0; i < ifNumber; i++) {
 		if (strcmp(interface, oldperfdata[i].descr) == 0) {

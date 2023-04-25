@@ -5,33 +5,106 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-/* uptime counter */
-extern unsigned int uptime;
-extern unsigned int parsed_lastcheck;
+/*
+ * text strings to output in the perfdata
+ */
 
-extern int ifNumber;
-extern const char *modes[];
+char *if_vars_default[] = {"inOctets", "outOctets", "inDiscards", "outDiscards",
+						   "inErrors", "outErrors", "inUcast",	  "outUcast",
+						   "speed",	   "inBitps",	"outBitps"};
 
-extern char default_community[];
-extern char *if_vars_default[];
-extern char *if_vars_cisco[];
-extern char *oid_if_bulkget[];
-extern char *oid_if_get[];
-extern char *oid_if_bintec[];
-extern char *oid_alias_bulkget[];
-extern char *oid_alias_get[];
-extern char *oid_alias_bintec[];
-extern char *oid_names_bulkget[];
-extern char *oid_names_get[];
-extern char *oid_names_bintec[];
-extern char *oid_vals_default[];
-extern char *oid_vals_cisco[];
-extern char *oid_extended[];
-extern char *oid_extended_cisco[];
+char *if_vars_cisco[] = {"inOctets",	"outOctets", "inDiscards",
+						 "outDiscards", "inCRCs",	 "outCollisions",
+						 "inUcast",		"outUcast",	 "speed",
+						 "inBitps",		"outBitps"};
+
+/*
+ * OIDs, hardcoded to remove the dependency on MIBs
+ */
+char *oid_if_bulkget[] = {".1.3.6.1.2.1.1.3", ".1.3.6.1.2.1.2.1",
+						  ".1.3.6.1.2.1.2.2.1.2",
+						  0}; /* "uptime", "ifNumber", "ifDescr" */
+
+char *oid_if_get[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0",
+					  ".1.3.6.1.2.1.2.2.1.2.1",
+					  0}; /* "uptime", "ifNumber", "ifDescr" */
+
+char *oid_if_bintec[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0",
+						 ".1.3.6.1.2.1.2.2.1.2.0",
+						 0}; /* "uptime", "ifNumber", "ifDescr" */
+
+char *oid_extended[] = {".1.3.6.1.2.1.31.1.1.1.6",	/* ifHCInOctets */
+						".1.3.6.1.2.1.31.1.1.1.10", /* ifHCOutOctets */
+						".1.3.6.1.2.1.2.2.1.11",	/* ifInUcastPkts */
+						".1.3.6.1.2.1.2.2.1.17",	/* ifOutUcastPkts */
+						".1.3.6.1.2.1.2.2.1.5",		/* ifSpeed */
+						".1.3.6.1.2.1.31.1.1.1.15", /* ifHighSpeed */
+						".1.3.6.1.2.1.31.1.1.1.18", /* alias */
+						".1.3.6.1.2.1.31.1.1.1.1",	/* name */
+						0};
+
+char *oid_alias_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.18", 0};  /* "alias" */
+char *oid_alias_get[] = {".1.3.6.1.2.1.31.1.1.1.18.1", 0};	  /* "alias" */
+char *oid_alias_bintec[] = {".1.3.6.1.2.1.31.1.1.1.18.0", 0}; /* "alias" */
+char *oid_names_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.1", 0};	  /* "name" */
+
+char *oid_names_get[] = {".1.3.6.1.2.1.31.1.1.1.1.1", 0};	  /* "name" */
+char *oid_names_bintec[] = {".1.3.6.1.2.1.31.1.1.1.1.0",
+							0}; /* "name - NOT TESTED!" */
+
+char *oid_extended_cisco[] = {
+	".1.3.6.1.4.1.9.5.1.4.1.1.23", /* portAdditionalOperStatus */
+	0};
+
+char *oid_vals_default[] = {".1.3.6.1.2.1.2.2.1.7",	 /* ifAdminStatus */
+							".1.3.6.1.2.1.2.2.1.8",	 /* ifOperStatus */
+							".1.3.6.1.2.1.2.2.1.10", /* ifInOctets */
+							".1.3.6.1.2.1.2.2.1.13", /* ifInDiscards */
+							".1.3.6.1.2.1.2.2.1.14", /* ifInErrors */
+							".1.3.6.1.2.1.2.2.1.16", /* ifOutOctets */
+							".1.3.6.1.2.1.2.2.1.19", /* ifOutDiscards */
+							".1.3.6.1.2.1.2.2.1.20", /* ifOutErrors */
+							0};
+
+char *oid_vals_cisco[] = {".1.3.6.1.2.1.2.2.1.7",	   /* ifAdminStatus */
+						  ".1.3.6.1.2.1.2.2.1.8",	   /* ifOperStatus */
+						  ".1.3.6.1.2.1.2.2.1.10",	   /* ifInOctets */
+						  ".1.3.6.1.2.1.2.2.1.13",	   /* ifInDiscards */
+						  ".1.3.6.1.4.1.9.2.2.1.1.12", /* locIfInCRC */
+						  ".1.3.6.1.2.1.2.2.1.16",	   /* ifOutOctets */
+						  ".1.3.6.1.2.1.2.2.1.19",	   /* ifOutDiscards */
+						  ".1.3.6.1.4.1.9.2.2.1.1.25", /* locIfCollisions */
+						  0};
+
+#define DEFAULT_COMMUNITY "public"
+
+/*
+ * operating modes
+ */
+const char *modes[] = {"default", "cisco", "nonbulk", "bintec", NULL};
+
+#ifdef DEBUG
+static char *implode_result;
+#endif
+
+enum returncode {
+	OK = 0,
+	WARNING = 1,
+	CRITICAL = 2,
+	UNKNOWN = 3
+};
+
+typedef enum returncode returncode_t;
 
 // Forward declarations
 void parse_and_check_commandline(int argc, char **argv,
 								 struct configuration_struct *config);
+bool fetch_interface_aliases(struct configuration_struct* , char **, netsnmp_session *ss, netsnmp_session *session, struct ifStruct *interfaces, int ifNumber);
+bool fetch_interface_names(struct configuration_struct* , char **oid_namesp, netsnmp_session *ss, netsnmp_session *session, struct ifStruct *interfaces, int ifNumber);
+returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata,
+		long double starttime, struct ifStruct *interfaces, String *out, char **if_vars,
+		unsigned int number_of_matched_interfaces, struct timeval *tv, int uptime,
+		int ifNumber);
 
 int main(int argc, char *argv[]) {
 	netsnmp_session session, *ss;
@@ -42,19 +115,20 @@ int main(int argc, char *argv[]) {
 	int status, status2;
 	int count = 0; /* used for: the number of interfaces we receive, the number
 					  of regex matches */
-	int j, k;
-	int errorflag = 0;
-	int warnflag = 0;
-	int lastifflag = 0;
 	size_t size;
 
-	struct configuration_struct config = {
+	/* uptime counter */
+	unsigned int uptime = 0;
+
+	int ifNumber = 0;
+
+	 config_t config = {
 		.crit_on_down_flag = true,
 		.get_aliases_flag = false,
 		.match_aliases_flag = false,
 		.get_names_flag = false,
 		.print_all_flag = false,
-		.community = default_community,
+		.community = DEFAULT_COMMUNITY,
 		.bandwith = 0,
 		.oldperfdatap = 0,
 		.err_tolerance = 50,
@@ -67,7 +141,7 @@ int main(int argc, char *argv[]) {
 		.priv_pass = 0,
 		.trimdescr = 0,
 		.prefix = 0,
-		.list = 0,
+		.iface_regex = 0,
 		.global_timeout = DFLT_TIMEOUT,
 		.exclude_list = 0,
 		.speed = 0,
@@ -82,13 +156,8 @@ int main(int argc, char *argv[]) {
 	struct ifStruct *oldperfdata = NULL; /* previous check interface data */
 	struct OIDStruct *OIDp;
 
-	struct timeval tv;
-	struct timezone tz;
 	long double starttime;
 	int ignore_count = 0;
-
-	double inload = 0, outload = 0;
-	char *ins, *outs;
 
 	char outstr[MAX_STRING];
 	memset(outstr, 0, sizeof(outstr));
@@ -96,13 +165,6 @@ int main(int argc, char *argv[]) {
 	out.max = MAX_STRING;
 	out.len = 0;
 	out.text = outstr;
-
-	char perfstr[MAX_STRING];
-	memset(perfstr, 0, sizeof(perfstr));
-	String perf;
-	perf.max = MAX_STRING;
-	perf.len = 0;
-	perf.text = perfstr;
 
 	struct OIDStruct lastOid;
 
@@ -118,6 +180,8 @@ int main(int argc, char *argv[]) {
 
 	parse_and_check_commandline(argc, argv, &config);
 
+	struct timeval tv;
+	struct timezone tz;
 	gettimeofday(&tv, &tz);
 	starttime = (long double)tv.tv_sec + (((long double)tv.tv_usec) / 1000000);
 
@@ -140,17 +204,17 @@ int main(int argc, char *argv[]) {
 
 	if (config.mode == NONBULK) {
 		oid_ifp = oid_if_get;
-		size = (sizeof_oid_if_get() / sizeof(char *)) - 1;
+		size = (sizeof(oid_if_get) / sizeof(char *)) - 1;
 		oid_aliasp = oid_alias_get;
 		oid_namesp = oid_names_get;
 	} else if (config.mode == BINTEC) {
 		oid_ifp = oid_if_bintec;
-		size = (sizeof_oid_if_bintec() / sizeof(char *)) - 1;
+		size = (sizeof(oid_if_bintec) / sizeof(char *)) - 1;
 		oid_aliasp = oid_alias_bintec;
 		oid_namesp = oid_names_bintec;
 	} else {
 		oid_ifp = oid_if_bulkget;
-		size = (sizeof_oid_if_bulkget() / sizeof(char *)) - 1;
+		size = (sizeof(oid_if_bulkget) / sizeof(char *)) - 1;
 		oid_aliasp = oid_alias_bulkget;
 		oid_namesp = oid_names_bulkget;
 	}
@@ -171,7 +235,7 @@ int main(int argc, char *argv[]) {
 	 * is necessary to work around buggy switches that lie about the ifNumber
 	 */
 
-	while (lastifflag == 0) {
+	for (bool lastifflag = false; lastifflag != true;) {
 
 		/* build our request depending on the mode */
 		if (count == 0)
@@ -269,7 +333,7 @@ int main(int argc, char *argv[]) {
 #ifdef DEBUG
 					fprintf(stderr, "reached end of interfaces\n");
 #endif
-					lastifflag++;
+					lastifflag = true;
 					break;
 				}
 
@@ -311,7 +375,7 @@ int main(int argc, char *argv[]) {
 #endif
 				}
 			} else {
-				lastifflag++;
+				lastifflag = true;
 				if (count > ifNumber) {
 #ifdef DEBUG
 					fprintf(
@@ -368,124 +432,8 @@ int main(int argc, char *argv[]) {
 	 * desired interfaces.
 	 */
 
-	if (config.match_aliases_flag && config.list) {
-		lastifflag = 0;
-		count = 0;
-		/* allocate the space for the alias OIDs */
-		OIDp = (struct OIDStruct *)calloc(1, sizeof(struct OIDStruct));
-		while (lastifflag == 0) {
-
-			/* build our request depending on the mode */
-			if (count == 0)
-				create_pdu(config.mode, oid_aliasp, &pdu, &OIDp, 0, ifNumber);
-			else {
-				/* we have not received all aliases in the preceding packet, so
-				 * fetch the next lot */
-
-				if (config.mode == BINTEC || config.mode == NONBULK)
-					pdu = snmp_pdu_create(SNMP_MSG_GETNEXT);
-				else {
-					pdu = snmp_pdu_create(SNMP_MSG_GETBULK);
-					pdu->non_repeaters = 0;
-					pdu->max_repetitions = ifNumber - count;
-				}
-				snmp_add_null_var(pdu, lastOid.name, lastOid.name_len);
-			}
-
-#ifdef DEBUG
-			implode_result = implode(", ", oid_aliasp + count);
-			benchmark_start("Send SNMP request for OIDs: %s", implode_result);
-#endif
-			/* send the request */
-			status = snmp_synch_response(ss, pdu, &response);
-#ifdef DEBUG
-			benchmark_end();
-			free(implode_result);
-#endif
-			if (config.sleep_usecs)
-				usleep(config.sleep_usecs);
-
-			if (status == STAT_SUCCESS &&
-				response->errstat == SNMP_ERR_NOERROR) {
-
-				vars = response->variables;
-
-				for (; vars; vars = vars->next_variable) {
-					/*
-					 * if the next OID is shorter
-					 * or if the next OID doesn't begin with our base OID
-					 * then we have reached the end of the table :-)
-					 * print_variable(vars->name, vars->name_length, vars);
-					 */
-
-					/* save the OID in case we need additional packets */
-					memcpy(lastOid.name, vars->name,
-						   (vars->name_length * sizeof(oid)));
-					lastOid.name_len = vars->name_length;
-
-					if ((vars->name_length < OIDp[0].name_len) ||
-						(memcmp(OIDp[0].name, vars->name,
-								(vars->name_length - 1) * sizeof(oid)))) {
-#ifdef DEBUG
-						fprintf(stderr, "reached end of aliases\n");
-#endif
-						lastifflag++;
-						break;
-					}
-
-					/* now we fill our interfaces array with the alias
-					 */
-					if (vars->type == ASN_OCTET_STR) {
-						int i = (int)vars->name[(vars->name_length - 1)];
-						if (i) {
-							MEMCPY(interfaces[count].alias, vars->val.string,
-								   vars->val_len);
-							TERMSTR(interfaces[count].alias, vars->val_len);
-						}
-					}
-					count++;
-				}
-
-				if (count < ifNumber) {
-					if (lastifflag) {
-#ifdef DEBUG
-						fprintf(stderr,
-								"Device has %d interfaces but only has %d "
-								"aliases\n",
-								ifNumber, count);
-#endif
-					} else {
-#ifdef DEBUG
-						fprintf(stderr, "Sending another packet for aliases\n");
-#endif
-					}
-				} else
-					lastifflag++;
-			} else {
-				/*
-				 * FAILURE: print what went wrong!
-				 */
-
-				if (status == STAT_SUCCESS)
-					printf("Error in packet\nReason: %s\n",
-						   snmp_errstring(response->errstat));
-				else if (status == STAT_TIMEOUT) {
-					printf("Timeout while reading interface aliases from %s\n",
-						   session.peername);
-					exit(EXITCODE_TIMEOUT);
-				} else
-					snmp_sess_perror("snmp_bulkget", ss);
-				exit(2);
-			}
-			/*
-			 * Clean up:
-			 *   free the response.
-			 */
-			if (response) {
-				snmp_free_pdu(response);
-				response = 0;
-			}
-		}
+	if (config.match_aliases_flag && config.iface_regex) {
+		fetch_interface_aliases(&config, oid_aliasp, ss, &session, interfaces, ifNumber);
 	}
 
 	/* If the get_names_flag is set, we also have to get the interface names so
@@ -495,126 +443,11 @@ int main(int argc, char *argv[]) {
 	 * be solved better (i.e. by putting it into a function) but it works this
 	 * way
 	 * :-) */
-
-	if (config.get_names_flag && config.list) {
-		lastifflag = 0;
-		count = 0;
-		/* allocate the space for the names OIDs */
-		OIDp = (struct OIDStruct *)calloc(1, sizeof(struct OIDStruct));
-		while (lastifflag == 0) {
-
-			/* build our request depending on the mode */
-			if (count == 0)
-				create_pdu(config.mode, oid_namesp, &pdu, &OIDp, 0, ifNumber);
-			else {
-				/* we have not received all names in the preceding packet, so
-				 * fetch the next lot */
-
-				if (config.mode == BINTEC || config.mode == NONBULK)
-					pdu = snmp_pdu_create(SNMP_MSG_GETNEXT);
-				else {
-					pdu = snmp_pdu_create(SNMP_MSG_GETBULK);
-					pdu->non_repeaters = 0;
-					pdu->max_repetitions = ifNumber - count;
-				}
-				snmp_add_null_var(pdu, lastOid.name, lastOid.name_len);
-			}
-
-#ifdef DEBUG
-			implode_result = implode(", ", oid_namesp + count);
-			benchmark_start("Send SNMP request for OIDs: %s", implode_result);
-#endif
-			/* send the request */
-			status = snmp_synch_response(ss, pdu, &response);
-#ifdef DEBUG
-			benchmark_end();
-			free(implode_result);
-#endif
-			if (config.sleep_usecs)
-				usleep(config.sleep_usecs);
-
-			if (status == STAT_SUCCESS &&
-				response->errstat == SNMP_ERR_NOERROR) {
-
-				vars = response->variables;
-
-				for (; vars; vars = vars->next_variable) {
-					/*
-					 * if the next OID is shorter
-					 * or if the next OID doesn't begin with our base OID
-					 * then we have reached the end of the table :-)
-					 * print_variable(vars->name, vars->name_length, vars);
-					 */
-
-					/* save the OID in case we need additional packets */
-					memcpy(lastOid.name, vars->name,
-						   (vars->name_length * sizeof(oid)));
-					lastOid.name_len = vars->name_length;
-
-					if ((vars->name_length < OIDp[0].name_len) ||
-						(memcmp(OIDp[0].name, vars->name,
-								(vars->name_length - 1) * sizeof(oid)))) {
-#ifdef DEBUG
-						fprintf(stderr, "reached end of names\n");
-#endif
-						lastifflag++;
-						break;
-					}
-
-					/* now we fill our interfaces array with the names
-					 */
-					if (vars->type == ASN_OCTET_STR) {
-						int i = (int)vars->name[(vars->name_length - 1)];
-						if (i) {
-							MEMCPY(interfaces[count].name, vars->val.string,
-								   vars->val_len);
-							TERMSTR(interfaces[count].name, vars->val_len);
-						}
-					}
-					count++;
-				}
-
-				if (count < ifNumber) {
-#ifdef DEBUG
-					if (lastifflag) {
-						fprintf(
-							stderr,
-							"Device has %d interfaces but only has %d names\n",
-							ifNumber, count);
-					} else {
-						fprintf(stderr, "Sending another packet for names\n");
-					}
-#endif
-				} else
-					lastifflag++;
-			} else {
-				/*
-				 * FAILURE: print what went wrong!
-				 */
-
-				if (status == STAT_SUCCESS)
-					printf("Error in packet\nReason: %s\n",
-						   snmp_errstring(response->errstat));
-				else if (status == STAT_TIMEOUT) {
-					printf("Timeout while reading interface names from %s\n",
-						   session.peername);
-					exit(EXITCODE_TIMEOUT);
-				} else
-					snmp_sess_perror("snmp_bulkget", ss);
-				exit(2);
-			}
-			/*
-			 * Clean up:
-			 *   free the response.
-			 */
-			if (response) {
-				snmp_free_pdu(response);
-				response = 0;
-			}
-		}
+	if (config.get_names_flag && config.iface_regex) {
+		fetch_interface_names(&config, oid_namesp, ss, &session, interfaces, ifNumber);
 	}
 
-	if (config.list) {
+	if (config.iface_regex) {
 		/*
 		 * a regex was given so we will go through our array
 		 * and try and match it with what we received
@@ -683,7 +516,7 @@ int main(int argc, char *argv[]) {
 	 * N.B. if the interfaces are continuous we could try
 	 * a bulk get instead
 	 */
-	for (j = 0; j < ifNumber; j++) {
+	for (int j = 0, k = 0; j < ifNumber; j++) {
 		/* add the interface to the oldperfdata list */
 		strcpy_nospaces(oldperfdata[j].descr, interfaces[j].descr);
 
@@ -874,76 +707,110 @@ int main(int argc, char *argv[]) {
 
 	gettimeofday(&tv, &tz);
 
-	if (config.oldperfdatap && config.oldperfdatap[0])
-		parse_perfdata(config.oldperfdatap, oldperfdata, config.prefix,
-					   &parsed_lastcheck, config.mode);
+	returncode_t exit_code = print_output(&config, oldperfdata, starttime, interfaces, &out, if_vars, count, &tv, uptime, ifNumber);
 
-	if (config.lastcheck)
-		config.lastcheck = (starttime - config.lastcheck);
+
+#ifdef DEBUG
+	benchmark_start("Close SNMP session");
+#endif
+	snmp_close(ss);
+	snmp_close(&session);
+#ifdef DEBUG
+	benchmark_end();
+#endif
+
+	SOCK_CLEANUP;
+	exit(exit_code);
+}
+
+returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata,
+		long double starttime, struct ifStruct *interfaces, String *out, char **if_vars,
+		unsigned int number_of_matched_interfaces, struct timeval *tv, int uptime,
+		int ifNumber) {
+
+	unsigned int parsed_lastcheck = 0;
+
+	if (config->oldperfdatap && config->oldperfdatap[0])
+		parse_perfdata(config->oldperfdatap, oldperfdata, config->prefix,
+					   &parsed_lastcheck, config->mode, ifNumber, if_vars);
+
+	if (config->lastcheck)
+		config->lastcheck = (starttime - config->lastcheck);
 	else if (parsed_lastcheck)
-		config.lastcheck = (starttime - parsed_lastcheck);
+		config->lastcheck = (starttime - parsed_lastcheck);
 
 	/* do not use old perfdata if the device has been reset recently
 	 * Note that a switch will typically rollover the uptime counter every 497
 	 * days which is infrequent enough to not bother about :-)
 	 * UPTIME_TOLERANCE_IN_SECS doesn't need to be a big number
 	 */
-	if ((config.lastcheck + UPTIME_TOLERANCE_IN_SECS) > uptime)
-		config.lastcheck = 0;
+	if ((config->lastcheck + UPTIME_TOLERANCE_IN_SECS) > uptime)
+		config->lastcheck = 0;
+
+	char perfstr[MAX_STRING];
+	memset(perfstr, 0, sizeof(perfstr));
+	String perf;
+	perf.max = MAX_STRING;
+	perf.len = 0;
+	perf.text = perfstr;
+
+	bool errorflag = false;
+	bool warnflag = false;
 
 	for (int i = 0; i < ifNumber; i++) {
+		double inload = 0, outload = 0;
 		if (!interfaces[i].ignore) {
 			int warn = 0;
 
 			char *nameOrDescr =
-				config.get_names_flag && strlen(interfaces[i].name)
+				config->get_names_flag && strlen(interfaces[i].name)
 					? interfaces[i].name
 					: interfaces[i].descr;
 
 			if ((!interfaces[i].status || interfaces[i].err_disable) &&
 				!interfaces[i].ignore && !interfaces[i].admin_down) {
-				if (config.crit_on_down_flag) {
+				if (config->crit_on_down_flag) {
 					addstr(&perf, "[CRITICAL] ");
-					errorflag++;
+					errorflag = true;
 					/* show the alias if configured */
-					if (config.get_names_flag && strlen(interfaces[i].name)) {
-						addstr(&out, ", %s", interfaces[i].name);
+					if (config->get_names_flag && strlen(interfaces[i].name)) {
+						addstr(out, ", %s", interfaces[i].name);
 						addstr(&perf, "%s", interfaces[i].name);
 					} else {
-						addstr(&out, ", %s", interfaces[i].descr);
+						addstr(out, ", %s", interfaces[i].descr);
 						addstr(&perf, "%s", interfaces[i].descr);
 					}
 					if (!interfaces[i].admin_down) {
-						if (config.get_aliases_flag &&
+						if (config->get_aliases_flag &&
 							strlen(interfaces[i].alias)) {
-							addstr(&out, " (%s) down", interfaces[i].alias);
+							addstr(out, " (%s) down", interfaces[i].alias);
 							addstr(&perf, " (%s) down", interfaces[i].alias);
 						} else {
-							addstr(&out, " down");
+							addstr(out, " down");
 							addstr(&perf, " down");
 						}
 						if (interfaces[i].err_disable) {
-							addstr(&out, " (errdisable)");
+							addstr(out, " (errdisable)");
 							addstr(&perf, " (errdisable)");
 						}
 					}
 				} else {
 					addstr(&perf, "[OK] ");
-					if (config.get_names_flag && strlen(interfaces[i].name))
+					if (config->get_names_flag && strlen(interfaces[i].name))
 						addstr(&perf, "%s", interfaces[i].name);
 					else
 						addstr(&perf, "%s", interfaces[i].descr);
-					if (config.get_aliases_flag && strlen(interfaces[i].alias))
+					if (config->get_aliases_flag && strlen(interfaces[i].alias))
 						addstr(&perf, " (%s) down", interfaces[i].alias);
 					else
 						addstr(&perf, " down");
 				}
-			} else if (interfaces[i].admin_down && config.print_all_flag) {
+			} else if (interfaces[i].admin_down && config->print_all_flag) {
 				addstr(&perf, "[OK] %s",
-					   (config.get_names_flag && strlen(interfaces[i].name))
+					   (config->get_names_flag && strlen(interfaces[i].name))
 						   ? interfaces[i].name
 						   : interfaces[i].descr);
-				if (config.get_aliases_flag && strlen(interfaces[i].alias))
+				if (config->get_aliases_flag && strlen(interfaces[i].alias))
 					addstr(&perf, " (%s) is down (administrative down)",
 						   interfaces[i].alias);
 				else
@@ -955,76 +822,76 @@ int main(int argc, char *argv[]) {
 			else if ((oldperfdata[i].inErrors || oldperfdata[i].outErrors) &&
 					 (interfaces[i].inErrors >
 						  (oldperfdata[i].inErrors +
-						   (unsigned long)config.err_tolerance) ||
+						   (unsigned long)config->err_tolerance) ||
 					  interfaces[i].outErrors >
 						  (oldperfdata[i].outErrors +
-						   (unsigned long)config.coll_tolerance))) {
-				if (config.oldperfdatap && !interfaces[i].ignore) {
-					if (config.get_names_flag && strlen(interfaces[i].name))
+						   (unsigned long)config->coll_tolerance))) {
+				if (config->oldperfdatap && !interfaces[i].ignore) {
+					if (config->get_names_flag && strlen(interfaces[i].name))
 						addstr(&perf, "[WARNING] %s", interfaces[i].name);
 					else
 						addstr(&perf, "[WARNING] %s", interfaces[i].descr);
 
-					if (config.get_aliases_flag && strlen(interfaces[i].alias))
+					if (config->get_aliases_flag && strlen(interfaces[i].alias))
 						addstr(&perf, " (%s) has", interfaces[i].alias);
 					else
 						addstr(&perf, " has");
 
 					/* if we are not in cisco mode simply use "errors" */
 
-					if (config.mode != CISCO)
+					if (config->mode != CISCO)
 						addstr(&perf, " errors\n");
 					else {
 						if (interfaces[i].inErrors >
 							(oldperfdata[i].inErrors +
-							 (unsigned long)config.err_tolerance))
+							 (unsigned long)config->err_tolerance))
 							addstr(&perf, " %lu CRC errors since last check\n",
 								   interfaces[i].inErrors -
 									   oldperfdata[i].inErrors);
 						if (interfaces[i].outErrors >
 							(oldperfdata[i].outErrors +
-							 (unsigned long)config.coll_tolerance))
+							 (unsigned long)config->coll_tolerance))
 							addstr(&perf, " %lu collisions since last check\n",
 								   interfaces[i].outErrors -
 									   oldperfdata[i].outErrors);
 					}
-					if (config.get_names_flag && strlen(interfaces[i].name))
-						addstr(&out, ", %s has %lu errors", interfaces[i].name,
+					if (config->get_names_flag && strlen(interfaces[i].name))
+						addstr(out, ", %s has %lu errors", interfaces[i].name,
 							   (interfaces[i].inErrors +
 								interfaces[i].outErrors -
 								oldperfdata[i].inErrors -
 								oldperfdata[i].outErrors));
 					else
-						addstr(&out, ", %s has %lu errors", interfaces[i].descr,
+						addstr(out, ", %s has %lu errors", interfaces[i].descr,
 							   (interfaces[i].inErrors +
 								interfaces[i].outErrors -
 								oldperfdata[i].inErrors -
 								oldperfdata[i].outErrors));
-					warnflag++;
+					warnflag = true;
 					// warn++; /* if you uncomment this you will get 2 rows with
 					// [warning]
 					// */
 				}
 			}
 
-			if (config.lastcheck && (interfaces[i].speed || config.speed) &&
+			if (config->lastcheck && (interfaces[i].speed || config->speed) &&
 				!interfaces[i].admin_down &&
 				(oldperfdata[i].inOctets || oldperfdata[i].outOctets)) {
 				interfaces[i].inbitps =
 					(subtract64(interfaces[i].inOctets, oldperfdata[i].inOctets,
-								config.lastcheck) /
-					 (u64)config.lastcheck) *
+								config->lastcheck, uptime) /
+					 (u64)config->lastcheck) *
 					8ULL;
 				interfaces[i].outbitps =
 					(subtract64(interfaces[i].outOctets,
-								oldperfdata[i].outOctets, config.lastcheck) /
-					 (u64)config.lastcheck) *
+								oldperfdata[i].outOctets, config->lastcheck, uptime) /
+					 (u64)config->lastcheck) *
 					8ULL;
-				if (config.speed) {
+				if (config->speed) {
 					inload = (long double)interfaces[i].inbitps /
-							 ((long double)config.speed / 100L);
+							 ((long double)config->speed / 100L);
 					outload = (long double)interfaces[i].outbitps /
-							  ((long double)config.speed / 100L);
+							  ((long double)config->speed / 100L);
 				} else {
 					/* use the interface speed if a speed is not given */
 					inload = (long double)interfaces[i].inbitps /
@@ -1033,10 +900,10 @@ int main(int argc, char *argv[]) {
 							  ((long double)interfaces[i].speed / 100L);
 				}
 
-				if ((config.bandwith > 0) && ((int)inload > config.bandwith ||
-											  (int)outload > config.bandwith)) {
+				if ((config->bandwith > 0) && ((int)inload > config->bandwith ||
+											  (int)outload > config->bandwith)) {
 					warn++;
-					warnflag++;
+					warnflag = true;
 				}
 			}
 
@@ -1047,14 +914,17 @@ int main(int argc, char *argv[]) {
 					addstr(&perf, "[WARNING]");
 
 				addstr(&perf, " %s", nameOrDescr);
-				if (config.get_aliases_flag && strlen(interfaces[i].alias))
+
+				if (config->get_aliases_flag && strlen(interfaces[i].alias))
 					addstr(&perf, " (%s)", interfaces[i].alias);
 				addstr(&perf, " is up");
 			}
-			if (config.lastcheck && (interfaces[i].speed || config.speed) &&
+
+			if (config->lastcheck && (interfaces[i].speed || config->speed) &&
 				(interfaces[i].inbitps > 0ULL ||
 				 interfaces[i].outbitps > 0ULL) &&
 				!interfaces[i].admin_down) {
+				char *ins, *outs;
 				gauge_to_si(interfaces[i].inbitps, &ins);
 				gauge_to_si(interfaces[i].outbitps, &outs);
 
@@ -1077,24 +947,24 @@ int main(int argc, char *argv[]) {
 		printf("OK:");
 
 	printf(" %d interface%s found", ifNumber, (ifNumber == 1) ? "" : "s");
-	if (config.list)
-		printf(", of which %d matched the regex", count);
+	if (config->iface_regex)
+		printf(", of which %d matched the regex", number_of_matched_interfaces);
 
 	/* now print performance data */
 
 	printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf checktime=%ld",
-		   (int)out.len, out.text, count,
-		   (((long double)tv.tv_sec + ((long double)tv.tv_usec / 1000000)) -
+		   (int)out->len, out->text, number_of_matched_interfaces,
+		   (((long double)tv->tv_sec + ((long double)tv->tv_usec / 1000000)) -
 			starttime),
-		   tv.tv_sec);
+		   tv->tv_sec);
 	if (uptime)
 		printf(" %sdevice::check_snmp::uptime=%us",
-			   config.prefix ? config.prefix : "", uptime);
+			   config->prefix ? config->prefix : "", uptime);
 
 	for (int i = 0; i < ifNumber; i++) {
 		if (!interfaces[i].ignore &&
-			(!interfaces[i].admin_down || config.print_all_flag)) {
-			printf(" %s%s::check_snmp::", config.prefix ? config.prefix : "",
+			(!interfaces[i].admin_down || config->print_all_flag)) {
+			printf(" %s%s::check_snmp::", config->prefix ? config->prefix : "",
 				   oldperfdata[i].descr);
 			printf("%s=%lluc %s=%lluc", if_vars[0], interfaces[i].inOctets,
 				   if_vars[1], interfaces[i].outOctets);
@@ -1104,8 +974,8 @@ int main(int argc, char *argv[]) {
 				   if_vars[5], interfaces[i].outErrors);
 			printf(" %s=%luc %s=%luc", if_vars[6], interfaces[i].inUcast,
 				   if_vars[7], interfaces[i].outUcast);
-			if (config.speed)
-				printf(" %s=%llu", if_vars[8], config.speed);
+			if (config->speed)
+				printf(" %s=%llu", if_vars[8], config->speed);
 			else
 				printf(" %s=%llu", if_vars[8], interfaces[i].speed);
 			printf(" %s=%llub %s=%llub", if_vars[9], interfaces[i].inbitps,
@@ -1114,16 +984,268 @@ int main(int argc, char *argv[]) {
 	}
 	printf("\n%*s", (int)perf.len, perf.text);
 
-#ifdef DEBUG
-	benchmark_start("Close SNMP session");
-#endif
-	snmp_close(ss);
-#ifdef DEBUG
-	benchmark_end();
-#endif
+	if (errorflag) {
+		return CRITICAL;
+	} else if (warnflag) {
+		return WARNING;
+	} else {
+		return OK;
+	}
+}
 
-	SOCK_CLEANUP;
-	return ((errorflag) ? 2 : ((warnflag) ? 1 : 0));
+bool fetch_interface_aliases(struct configuration_struct* config, char **oid_aliasp,
+		netsnmp_session *ss, netsnmp_session *session, struct ifStruct *interfaces,
+		int ifNumber) {
+	bool lastifflag = false;
+	int count = 0;
+	netsnmp_pdu *pdu;
+	struct OIDStruct lastOid;
+	netsnmp_pdu *response;
+
+	/* allocate the space for the alias OIDs */
+	struct OIDStruct *OIDp = (struct OIDStruct *)calloc(1, sizeof(struct OIDStruct));
+	while (lastifflag == false) {
+
+		/* build our request depending on the mode */
+		if (count == 0)
+			create_pdu(config->mode, oid_aliasp, &pdu, &OIDp, 0, ifNumber);
+		else {
+			/* we have not received all aliases in the preceding packet, so
+			 * fetch the next lot */
+
+			if (config->mode == BINTEC || config->mode == NONBULK)
+				pdu = snmp_pdu_create(SNMP_MSG_GETNEXT);
+			else {
+				pdu = snmp_pdu_create(SNMP_MSG_GETBULK);
+				pdu->non_repeaters = 0;
+				pdu->max_repetitions = ifNumber - count;
+			}
+			snmp_add_null_var(pdu, lastOid.name, lastOid.name_len);
+		}
+
+#ifdef DEBUG
+		implode_result = implode(", ", oid_aliasp + count);
+		benchmark_start("Send SNMP request for OIDs: %s", implode_result);
+#endif
+		/* send the request */
+		int status;
+		status = snmp_synch_response(ss, pdu, &response);
+#ifdef DEBUG
+		benchmark_end();
+		free(implode_result);
+#endif
+		if (config->sleep_usecs)
+			usleep(config->sleep_usecs);
+
+		if (status == STAT_SUCCESS &&
+				response->errstat == SNMP_ERR_NOERROR) {
+
+			netsnmp_variable_list *vars;
+			vars = response->variables;
+
+			for (; vars; vars = vars->next_variable) {
+				/*
+				 * if the next OID is shorter
+				 * or if the next OID doesn't begin with our base OID
+				 * then we have reached the end of the table :-)
+				 * print_variable(vars->name, vars->name_length, vars);
+				 */
+
+				/* save the OID in case we need additional packets */
+				memcpy(lastOid.name, vars->name,
+						(vars->name_length * sizeof(oid)));
+				lastOid.name_len = vars->name_length;
+
+				if ((vars->name_length < OIDp[0].name_len) ||
+						(memcmp(OIDp[0].name, vars->name,
+								(vars->name_length - 1) * sizeof(oid)))) {
+#ifdef DEBUG
+					fprintf(stderr, "reached end of aliases\n");
+#endif
+					lastifflag = true;
+					break;
+				}
+
+				/* now we fill our interfaces array with the alias
+				*/
+				if (vars->type == ASN_OCTET_STR) {
+					int i = (int)vars->name[(vars->name_length - 1)];
+					if (i) {
+						MEMCPY(interfaces[count].alias, vars->val.string,
+								vars->val_len);
+						TERMSTR(interfaces[count].alias, vars->val_len);
+					}
+				}
+				count++;
+			}
+
+			if (count < ifNumber) {
+				if (lastifflag) {
+#ifdef DEBUG
+					fprintf(stderr,
+							"Device has %d interfaces but only has %d "
+							"aliases\n",
+							ifNumber, count);
+#endif
+				} else {
+#ifdef DEBUG
+					fprintf(stderr, "Sending another packet for aliases\n");
+#endif
+				}
+			} else
+				lastifflag = true;
+		} else {
+			/*
+			 * FAILURE: print what went wrong!
+			 */
+
+			if (status == STAT_SUCCESS)
+				printf("Error in packet\nReason: %s\n",
+						snmp_errstring(response->errstat));
+			else if (status == STAT_TIMEOUT) {
+				printf("Timeout while reading interface aliases from %s\n",
+						(*session).peername);
+				exit(EXITCODE_TIMEOUT);
+			} else
+				snmp_sess_perror("snmp_bulkget", ss);
+			exit(2);
+		}
+		/*
+		 * Clean up:
+		 *   free the response.
+		 */
+		if (response) {
+			snmp_free_pdu(response);
+			response = 0;
+		}
+	}
+	return true;
+}
+
+bool fetch_interface_names(struct configuration_struct* config, char **oid_namesp, netsnmp_session *ss, netsnmp_session *session, struct ifStruct *interfaces, int ifNumber) {
+	bool lastifflag = false;
+	netsnmp_pdu *pdu;
+	struct OIDStruct lastOid;
+	netsnmp_pdu *response;
+
+	/* allocate the space for the names OIDs */
+	struct OIDStruct *OIDp = (struct OIDStruct *)calloc(1, sizeof(struct OIDStruct));
+
+	int count = 0;
+
+	while (lastifflag == false) {
+
+		/* build our request depending on the mode */
+		if (count == 0)
+			create_pdu(config->mode, oid_namesp, &pdu, &OIDp, 0, ifNumber);
+		else {
+			/* we have not received all names in the preceding packet, so
+			 * fetch the next lot */
+
+			if (config->mode == BINTEC || config->mode == NONBULK)
+				pdu = snmp_pdu_create(SNMP_MSG_GETNEXT);
+			else {
+				pdu = snmp_pdu_create(SNMP_MSG_GETBULK);
+				pdu->non_repeaters = 0;
+				pdu->max_repetitions = ifNumber - count;
+			}
+			snmp_add_null_var(pdu, lastOid.name, lastOid.name_len);
+		}
+
+#ifdef DEBUG
+		implode_result = implode(", ", oid_namesp + count);
+		benchmark_start("Send SNMP request for OIDs: %s", implode_result);
+#endif
+		/* send the request */
+		int status = snmp_synch_response(ss, pdu, &response);
+#ifdef DEBUG
+		benchmark_end();
+		free(implode_result);
+#endif
+		if (config->sleep_usecs)
+			usleep(config->sleep_usecs);
+
+		if (status == STAT_SUCCESS &&
+				response->errstat == SNMP_ERR_NOERROR) {
+
+			netsnmp_variable_list *vars = response->variables;
+
+			for (; vars; vars = vars->next_variable) {
+				/*
+				 * if the next OID is shorter
+				 * or if the next OID doesn't begin with our base OID
+				 * then we have reached the end of the table :-)
+				 * print_variable(vars->name, vars->name_length, vars);
+				 */
+
+				/* save the OID in case we need additional packets */
+				memcpy(lastOid.name, vars->name,
+						(vars->name_length * sizeof(oid)));
+				lastOid.name_len = vars->name_length;
+
+				if ((vars->name_length < OIDp[0].name_len) ||
+						(memcmp(OIDp[0].name, vars->name,
+								(vars->name_length - 1) * sizeof(oid)))) {
+#ifdef DEBUG
+					fprintf(stderr, "reached end of names\n");
+#endif
+					lastifflag = true;
+					break;
+				}
+
+				/* now we fill our interfaces array with the names
+				*/
+				if (vars->type == ASN_OCTET_STR) {
+					int i = (int)vars->name[(vars->name_length - 1)];
+					if (i) {
+						MEMCPY(interfaces[count].name, vars->val.string,
+								vars->val_len);
+						TERMSTR(interfaces[count].name, vars->val_len);
+					}
+				}
+				count++;
+			}
+
+			if (count < ifNumber) {
+#ifdef DEBUG
+				if (lastifflag) {
+					fprintf(
+							stderr,
+							"Device has %d interfaces but only has %d names\n",
+							ifNumber, count);
+				} else {
+					fprintf(stderr, "Sending another packet for names\n");
+				}
+#endif
+			} else
+				lastifflag = true;
+		} else {
+			/*
+			 * FAILURE: print what went wrong!
+			 */
+
+			if (status == STAT_SUCCESS)
+				printf("Error in packet\nReason: %s\n",
+						snmp_errstring(response->errstat));
+			else if (status == STAT_TIMEOUT) {
+				printf("Timeout while reading interface names from %s\n",
+						(*session).peername);
+				exit(EXITCODE_TIMEOUT);
+			} else
+				snmp_sess_perror("snmp_bulkget", ss);
+			exit(2);
+		}
+		/*
+		 * Clean up:
+		 *   free the response.
+		 */
+		if (response) {
+			snmp_free_pdu(response);
+			response = 0;
+		}
+	}
+
+	return true;
 }
 
 void parse_and_check_commandline(int argc, char **argv,
@@ -1232,7 +1354,7 @@ void parse_and_check_commandline(int argc, char **argv,
 			config->prefix = optarg;
 			break;
 		case 'r':
-			config->list = optarg;
+			config->iface_regex = optarg;
 			break;
 		case 'R':
 			config->exclude_list = optarg;
@@ -1293,18 +1415,18 @@ void parse_and_check_commandline(int argc, char **argv,
 #endif /* HAVE_GETADDRINFO */
 
 	if (!config->community)
-		config->community = default_community;
+		config->community = DEFAULT_COMMUNITY;
 
-	if (config->exclude_list && !config->list)
+	if (config->exclude_list && !config->iface_regex)
 		/* use .* as the default regex */
-		config->list = ".*";
+		config->iface_regex = ".*";
 
 	/* get the start time */
 
 	/* parse the interfaces regex */
 	int status;
-	if (config->list) {
-		status = regcomp(&config->re, config->list,
+	if (config->iface_regex) {
+		status = regcomp(&config->re, config->iface_regex,
 						 REG_ICASE | REG_EXTENDED | REG_NOSUB);
 		if (status != 0) {
 			printf("Error creating regex\n");
@@ -1324,4 +1446,61 @@ void parse_and_check_commandline(int argc, char **argv,
 	/* set the MIB variable if it is unset to avoid net-snmp warnings */
 	if (getenv("MIBS") == NULL)
 		setenv("MIBS", "", 1);
+}
+
+int usage(char *progname) {
+	int i;
+	printf(
+#ifdef PACKAGE_STRING
+		PACKAGE_STRING "\n\n"
+#endif
+					   "Usage: %s -h <hostname> [OPTIONS]\n",
+		progname);
+
+	printf(" -c|--community\t\tcommunity (default public)\n");
+	printf(" -r|--regex\t\tinterface list regexp\n");
+	printf(" -R|--exclude-regex\tinterface list negative regexp\n");
+	printf(" -e|--errors\t\tnumber of in errors (CRC errors for cisco) to "
+		   "consider a warning (default 50)\n");
+	printf(" -f|--out-errors\tnumber of out errors (collisions for cisco) to "
+		   "consider a warning (default same as in errors)\n");
+	printf(" -p|--perfdata\t\tlast check perfdata\n");
+	printf(" -P|--prefix\t\tprefix interface names with this label\n");
+	printf(" -t|--lastcheck\t\tlast checktime (unixtime)\n");
+	printf(" -b|--bandwidth\t\tbandwidth warn level in %%\n");
+	printf(" -s|--speed\t\toverride speed detection with this value (bits per "
+		   "sec)\n");
+	printf(" -x|--trim\t\tcut this number of characters from the start of "
+		   "interface descriptions\n");
+	printf(" -m|--mode\t\tspecial operating mode (");
+	for (i = 0; modes[i]; i++) {
+		printf("%s%s", i ? "," : "", modes[i]);
+	}
+	printf(")\n");
+	printf(" -j|--auth-proto\tSNMPv3 Auth Protocol (SHA|MD5)\n");
+	printf(" -J|--auth-phrase\tSNMPv3 Auth Phrase\n");
+#ifdef usmDESPrivProtocol
+	printf(
+		" -k|--priv-proto\tSNMPv3 Privacy Protocol (AES|DES), unset means not "
+		"privacy protocol!\n");
+#else
+	printf(" -k|--priv-proto\tSNMPv3 Privacy Protocol (AES), unset means not "
+		   "privacy protocol!\n");
+#endif
+	printf(" -K|--priv-phrase\tSNMPv3 Privacy Phrase\n");
+	printf(" -u|--user\t\tSNMPv3 User\n");
+	printf(" -d|--down-is-ok\tdisables critical alerts for down interfaces\n");
+	printf(" -a|--aliases\t\tretrieves the interface description\n");
+	printf(" -A|--match-aliases\talso match against aliases (Option -a "
+		   "automatically enabled)\n");
+	printf(
+		" -D|--debug-print\tlist administrative down interfaces in perfdata\n");
+	printf(" -N|--if-names\t\tuse ifName instead of ifDescr\n");
+	printf("    --timeout\t\tsets the SNMP timeout (in ms)\n");
+	printf("    --sleep\t\tsleep between every SNMP query (in ms)\n");
+	printf("    --retries\t\thow often to retry before giving up\n");
+	printf("    --max-repetitions\t\tsee "
+		   "<http://www.net-snmp.org/docs/man/snmpbulkwalk.html>\n");
+	printf("\n");
+	return 3;
 }

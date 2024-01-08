@@ -229,6 +229,22 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user,
 			session->securityAuthProto = snmp_duplicate_objid(
 				usmHMACSHA1AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
 			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
+		} else if (!strcmp(auth_proto, "SHA-224")) {
+			session->securityAuthProto = snmp_duplicate_objid(
+				usmHMAC128SHA224AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
+			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
+		} else if (!strcmp(auth_proto, "SHA-256")) {
+			session->securityAuthProto = snmp_duplicate_objid(
+				usmHMAC192SHA256AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
+			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
+		} else if (!strcmp(auth_proto, "SHA-384")) {
+			session->securityAuthProto = snmp_duplicate_objid(
+				usmHMAC256SHA384AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
+			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
+		} else if (!strcmp(auth_proto, "SHA-512")) {
+			session->securityAuthProto = snmp_duplicate_objid(
+				usmHMAC384SHA512AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
+			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
 		} else if (!strcmp(auth_proto, "MD5")) {
 			session->securityAuthProto = snmp_duplicate_objid(
 				usmHMACMD5AuthProtocol, USM_AUTH_PROTO_MD5_LEN);

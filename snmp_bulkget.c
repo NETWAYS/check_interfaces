@@ -48,14 +48,16 @@
  *
  */
 
+#include <net-snmp/net-snmp-config.h>
+
 /* asprintf and getopt_long */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#include <net-snmp/library/transform_oids.h>
 #endif
 #include <stdio.h>
 
 #include <limits.h>
-#include <net-snmp/net-snmp-config.h>
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>

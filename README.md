@@ -59,7 +59,7 @@ make install
      -s|--speed         override speed detection with this value (bits per sec)
      -x|--trim          cut this number of characters from the start of interface descriptions
                             Useful for nortel switches
-     -j|--auth-proto    SNMPv3 Auth Protocol (SHA|MD5)
+     -j|--auth-proto    SNMPv3 Auth Protocol (SHA|SHA-224|SHA-256|SHA-384|SHA-512|MD5)
      -J|--auth-phrase   SNMPv3 Auth Phrase
      -k|--priv-proto    SNMPv3 Privacy Protocol (AES|DES) (optional)
      -K|--priv-phrase   SNMPv3 Privacy Phrase

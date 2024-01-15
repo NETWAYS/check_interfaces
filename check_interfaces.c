@@ -1477,7 +1477,7 @@ int usage(char *progname) {
 		printf("%s%s", i ? "," : "", modes[i]);
 	}
 	printf(")\n");
-	printf(" -j|--auth-proto\tSNMPv3 Auth Protocol (SHA|MD5)\n");
+	printf(" -j|--auth-proto\tSNMPv3 Auth Protocol (SHA|SHA-224|SHA-256|SHA-384|SHA-512|MD5)\n");
 	printf(" -J|--auth-phrase\tSNMPv3 Auth Phrase\n");
 #ifdef usmDESPrivProtocol
 	printf(

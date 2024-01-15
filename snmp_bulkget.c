@@ -48,14 +48,16 @@
  *
  */
 
+#include <net-snmp/net-snmp-config.h>
+
 /* asprintf and getopt_long */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#include <net-snmp/library/transform_oids.h>
 #endif
 #include <stdio.h>
 
 #include <limits.h>
-#include <net-snmp/net-snmp-config.h>
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
@@ -226,6 +228,22 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user,
 		if (!strcmp(auth_proto, "SHA")) {
 			session->securityAuthProto = snmp_duplicate_objid(
 				usmHMACSHA1AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
+			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
+		} else if (!strcmp(auth_proto, "SHA-224")) {
+			session->securityAuthProto = snmp_duplicate_objid(
+				usmHMAC128SHA224AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
+			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
+		} else if (!strcmp(auth_proto, "SHA-256")) {
+			session->securityAuthProto = snmp_duplicate_objid(
+				usmHMAC192SHA256AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
+			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
+		} else if (!strcmp(auth_proto, "SHA-384")) {
+			session->securityAuthProto = snmp_duplicate_objid(
+				usmHMAC256SHA384AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
+			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
+		} else if (!strcmp(auth_proto, "SHA-512")) {
+			session->securityAuthProto = snmp_duplicate_objid(
+				usmHMAC384SHA512AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
 			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
 		} else if (!strcmp(auth_proto, "MD5")) {
 			session->securityAuthProto = snmp_duplicate_objid(

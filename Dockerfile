@@ -7,17 +7,20 @@ ONBUILD ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y \
          build-essential \
+         autoconf \
          libsnmp-dev \
     && rm -rf /var/lib/apt/lists/*
 COPY . .
-RUN ./configure --libexecdir=/src \
+COPY ./README.md ./README
+RUN ls -R \
+    && ./configure --libexecdir=/src \
     && make $target
 
 FROM debian:stable-slim
 ONBUILD ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y \
-         libsnmp30 \
+         libsnmp40 \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=0 /src/check_interfaces /check_interfaces
 

@@ -1,9 +1,18 @@
+
+
+// This one is needed on FreeBSD and it has to be before the others or at least some of them
+#include <getopt.h>
+
+
 #include "snmp_bulkget.h"
 #include "utils.h"
 #include <net-snmp/net-snmp-config.h>
 #include <stdbool.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 /*
  * text strings to output in the perfdata

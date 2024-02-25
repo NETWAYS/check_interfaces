@@ -1,5 +1,5 @@
 AC_PREREQ([2.71])
-AC_INIT([check_interfaces],[1.4])
+AC_INIT([check_interfaces],[1.4.1])
 AC_PREFIX_DEFAULT(/usr/local/nagios)
 AC_PROG_CC()
 AC_PROG_INSTALL()
@@ -79,5 +79,14 @@ AC_TYPE_SIZE_T
 
 
 AC_SUBST([SNMP_LIBS])
+
+
+dnl Check whether DES encryption is available (might not on RHEL)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <net-snmp/net-snmp-config.h>
+				#include <net-snmp/net-snmp-includes.h>]], [[oid *foo = usmDESPrivProtocol;]])],[AC_DEFINE(HAVE_USM_DES_PRIV_PROTOCOL,1,Define whether we have DES Privacy Protocol)],[])
+
 AC_CONFIG_FILES([Makefile])
+
+
+
 AC_OUTPUT

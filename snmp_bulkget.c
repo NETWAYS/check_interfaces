@@ -207,7 +207,7 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user,
 			session->securityPrivProto = snmp_duplicate_objid(
 				usmAESPrivProtocol, USM_PRIV_PROTO_AES_LEN);
 			session->securityPrivProtoLen = USM_PRIV_PROTO_AES_LEN;
-#ifdef usmDESPrivProtocol
+#ifdef HAVE_USM_DES_PRIV_PROTOCOL
 		} else if (!strcmp(priv_proto, "DES")) {
 			session->securityPrivProto = snmp_duplicate_objid(
 				usmDESPrivProtocol, USM_PRIV_PROTO_DES_LEN);

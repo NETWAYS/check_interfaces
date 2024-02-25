@@ -20,7 +20,9 @@ jobs:
         sudo .github/prepare_ubuntu.sh
 
     - name: configure
-      run: ./configure
+      run: |
+        autoreconf
+        ./configure
 
     - name: Make
       run: make
@@ -39,7 +41,9 @@ jobs:
         sudo .github/prepare_ubuntu.sh
 
     - name: configure
-      run: ./configure
+      run: |
+        autoreconf
+        ./configure
 
     - name: Make
       run: make

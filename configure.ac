@@ -80,4 +80,9 @@ AC_TYPE_SIZE_T
 
 AC_SUBST([SNMP_LIBS])
 AC_CONFIG_FILES([Makefile])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <net-snmp/net-snmp-config.h>
+				#include <net-snmp/net-snmp-includes.h>]], [[oid *foo = usmDESPrivProtocol;]])],[AC_DEFINE(HAVE_USM_DES_PRIV_PROTOCOL,1,Define whether we have DES Privacy Protocol)],[])
+
+
 AC_OUTPUT

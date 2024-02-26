@@ -18,11 +18,20 @@ apt-get update
 apt-get -y install git build-essential libsnmp-dev
 ```
 
+
 Download and extract the tarball from https://github.com/NETWAYS/check_interfaces/releases
 
 ```
 ./configure --libexecdir=/usr/lib/nagios/plugins
 ```
+
+or clone this repository and regenerate the autoconf scripts
+
+```
+autoreconf
+./configure --libexecdir=/usr/lib/nagios/plugins
+```
+
 
 Running "make" should successfully compile the plugin, and "make install" will install them under
 the configured path.

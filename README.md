@@ -44,13 +44,7 @@ make install
 #### Prerequisites for FreeBSD
 
 ```
-$ sudo pkg install automake gcc
-```
-
-Your need the FreeBSD *source* package. If `/usr/src` is empty, you can get it with (substitute &lt;ARCH&gt; and &lt;FREEBSD-VERSION&gt; to values matching your system):
-```
-$ wget https://download.freebsd.org/releases/<ARCH>/<FREEBSD-VERSION>/src.txz
-$ sudo tar -C / -xf src.txz
+$ sudo pkg install automake gcc net-snmp
 ```
 
 To build:

@@ -11,7 +11,7 @@ This plugin uses the bulk-get mode of SNMPv2 by default - pass it the option -m 
 In order to compile this plugin you need the `NET SNMP Development` package
 (`libsnmp-dev` for Debian) as well as `autoconf` and the standard compilation tools.
 
-Example for Debian:
+#### Example for Debian:
 
 ```
 apt-get update
@@ -39,6 +39,26 @@ the configured path.
 ```
 make
 make install
+```
+
+#### Prerequisites for FreeBSD
+
+```
+$ sudo pkg install automake gcc
+```
+
+Your need the FreeBSD *source* package. If `/usr/src` is empty, you can get it with (substitute &lt;ARCH&gt; and &lt;FREEBSD-VERSION&gt; to values matching your system):
+```
+$ wget https://download.freebsd.org/releases/<ARCH>/<FREEBSD-VERSION>/src.txz
+$ sudo tar -C / -xf src.txz
+```
+
+To build:
+```
+$ autoreconf
+$ ./configure --prefix=/usr/local #works, but you should have your own plugins-dir!
+$ make
+$ sudo make install #optional
 ```
 
 ### Usage

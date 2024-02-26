@@ -44,15 +44,15 @@ make install
 #### Prerequisites for FreeBSD
 
 ```
-$ sudo pkg install automake gcc net-snmp
+sudo pkg install automake gcc net-snmp
 ```
 
 To build:
 ```
-$ autoreconf
-$ ./configure --prefix=/usr/local #works, but you should have your own plugins-dir!
-$ make
-$ sudo make install #optional
+autoreconf
+./configure --prefix=/usr/local   ## works, but you should have your own plugins-dir
+make
+sudo make install   ## optional
 ```
 
 ### Usage

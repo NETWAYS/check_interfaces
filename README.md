@@ -1,6 +1,12 @@
 check_interfaces
 ================
 
+This is a monitoring plugin for [Monitoring Plugins Interfaces](https://datatracker.ietf.org/doc/html/draft-kaestle-monitoring-plugins-interface-03)
+compatible monitoring systems.
+The intented usage is to retreive the interface data from devices implementing default SNMP network structures and test whether interfaces are up or down and whether the bandwith usage exceeds a certain threshold.
+As a secondary purpose, the list of interface and the ingoing/outgoing data counters are returned and can be visualized in the
+monitoring system.
+
 This plugin uses the bulk-get mode of SNMPv2 by default - pass it the option -m NONBULK to work with SNMPv1. Support for SNMPv3 with and without privacy is included.
 
 64 bit counters will be used if they are supported by the device.

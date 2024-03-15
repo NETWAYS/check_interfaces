@@ -741,7 +741,7 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 
 	if (config->oldperfdatap && config->oldperfdatap[0])
 		parse_perfdata(config->oldperfdatap, oldperfdata, config->prefix,
-					   &parsed_lastcheck, config->mode, ifNumber, if_vars);
+					   &parsed_lastcheck, ifNumber, if_vars);
 
 	if (config->lastcheck)
 		config->lastcheck = (starttime - config->lastcheck);

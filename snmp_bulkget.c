@@ -309,7 +309,7 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user,
  */
 int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
 				   char *prefix, unsigned int *parsed_lastcheck,
-				   enum mode_enum mode, int ifNumber,
+				   int ifNumber,
 					 char *perfdata_labels[]) {
 	char *last = 0, *last2 = 0, *word, *interface = 0, *var;
 	char *ptr;
@@ -375,7 +375,7 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
 		var = strtok_r(word, "=", &last2);
 
 		if (interface && var && valstr)
-			set_value(oldperfdata, interface, var, value, mode, ifNumber, perfdata_labels);
+			set_value(oldperfdata, interface, var, value, ifNumber, perfdata_labels);
 	}
 
 	return (0);
@@ -385,7 +385,7 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
  * fill the ifStruct with values
  */
 void set_value(struct ifStruct *oldperfdata, char *interface, char *var,
-			   u64 value, enum mode_enum mode, int ifNumber, char *if_vars[]) {
+			   u64 value, int ifNumber, char *if_vars[]) {
 	int i;
 
 	for (i = 0; i < ifNumber; i++) {

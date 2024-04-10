@@ -143,6 +143,7 @@ int main(int argc, char *argv[]) {
 		.err_tolerance = 50,
 		.coll_tolerance = -1,
 		.hostname = 0,
+		.port = "161",
 		.user = 0,
 		.auth_proto = 0,
 		.auth_pass = 0,
@@ -194,6 +195,18 @@ int main(int argc, char *argv[]) {
 	gettimeofday(&tv, &tz);
 	starttime = (long double)tv.tv_sec + (((long double)tv.tv_usec) / 1000000);
 
+	// +1 for the `:` between hostname and port
+	size_t peername_max_len = strlen(config.hostname) + strlen(config.port) + 1;
+	char *peername = calloc(1, peername_max_len+1);
+	if (peername == NULL) {
+		printf("Failed to allocate memory at %d in %s\n", __LINE__, __FUNCTION__);
+		exit(3);
+	}
+
+	strlcpy(peername, config.hostname, peername_max_len+1);
+	strlcat(peername, ":", peername_max_len+1);
+	strlcat(peername, config.port, peername_max_len+1);
+
 #ifdef DEBUG
 	benchmark_start("Start SNMP session");
 #endif
@@ -201,10 +214,10 @@ int main(int argc, char *argv[]) {
 		/* use snmpv3 */
 		ss = start_session_v3(&session, config.user, config.auth_proto,
 							  config.auth_pass, config.priv_proto,
-							  config.priv_pass, config.hostname,
+							  config.priv_pass, peername,
 							  config.global_timeout, config.session_retries);
 	else
-		ss = start_session(&session, config.community, config.hostname,
+		ss = start_session(&session, config.community, peername,
 						   config.mode, config.global_timeout,
 						   config.session_retries);
 #ifdef DEBUG
@@ -1257,6 +1270,10 @@ bool fetch_interface_names(struct configuration_struct* config, char **oid_names
 	return true;
 }
 
+enum {
+	PORT_OPTION = CHAR_MAX + 1
+};
+
 void parse_and_check_commandline(int argc, char **argv,
 								 struct configuration_struct *config) {
 	int opt;
@@ -1277,6 +1294,7 @@ void parse_and_check_commandline(int argc, char **argv,
 		{"errors", required_argument, NULL, 'e'},
 		{"out-errors", required_argument, NULL, 'f'},
 		{"hostname", required_argument, NULL, 'h'},
+		{"port", required_argument, NULL, PORT_OPTION},
 		{"auth-proto", required_argument, NULL, 'j'},
 		{"auth-phrase", required_argument, NULL, 'J'},
 		{"priv-proto", required_argument, NULL, 'k'},
@@ -1331,6 +1349,9 @@ void parse_and_check_commandline(int argc, char **argv,
 			break;
 		case 'h':
 			config->hostname = optarg;
+			break;
+		case PORT_OPTION:
+			config->port = optarg;
 			break;
 		case 'j':
 			config->auth_proto = optarg;
@@ -1510,6 +1531,7 @@ int usage(char *progname) {
 	printf("    --retries\t\thow often to retry before giving up\n");
 	printf("    --max-repetitions\t\tsee "
 		   "<http://www.net-snmp.org/docs/man/snmpbulkwalk.html>\n");
+	printf("    --port\t\tPort (default 161)\n");
 	printf("\n");
 	return 3;
 }

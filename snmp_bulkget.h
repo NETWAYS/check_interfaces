@@ -90,6 +90,7 @@ typedef struct configuration_struct {
 	int err_tolerance;
 	int coll_tolerance;
 	char *hostname;
+	char* port;
 	char *user;
 	char *auth_proto;
 	char *auth_pass;

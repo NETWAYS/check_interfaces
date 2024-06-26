@@ -1,0 +1,85 @@
+name: Build check_interfaces
+
+on:
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      CFLAGS: "-Wall" 
+
+    steps:
+    - uses: actions/checkout@v4
+ 
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+        cache: pip
+
+    - name: Install pip packages
+      run: pip install -r .github/requirements.txt
+
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y libsnmp-dev
+
+    - name: Configure
+      run: |
+        autoreconf
+        ./configure
+
+    - name: Make
+      run: make
+
+    - name: Start simmulation
+      run: |
+        setup-snmpsim-data /tmp/data
+        snmpsim-command-responder --daemonize --pid-file /tmp/snmp --data-dir=/tmp/data/network/switch --agent-udpv4-endpoint=127.0.0.1:1611
+
+    - name: Sleep
+      run: sleep 30s
+      shell: bash
+
+    - name: check_interfaces
+      run: ./check_interfaces -h 127.0.0.1 --port=1611 -c cisco-c3560 -d
+
+  clang-build:
+    runs-on: ubuntu-latest
+    env:
+      CC: clang
+      CFLAGS: "-Wall" 
+
+    steps:
+    - uses: actions/checkout@v4
+ 
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+        cache: pip
+
+    - name: Install pip packages
+      run: pip install -r .github/requirements.txt
+
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y libsnmp-dev
+
+    - name: Configure
+      run: |
+        autoreconf
+        ./configure
+
+    - name: Make
+      run: make
+
+    - name: Start simmulation
+      run: |
+        setup-snmpsim-data /tmp/data
+        snmpsim-command-responder --daemonize --pid-file /tmp/snmp --data-dir=/tmp/data/network/switch --agent-udpv4-endpoint=127.0.0.1:1611
+
+    - name: Sleep
+      run: sleep 30s
+      shell: bash
+
+    - name: check_interfaces
+      run: ./check_interfaces -h 127.0.0.1 --port=1611 -c cisco-c3560 -d

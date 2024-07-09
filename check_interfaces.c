@@ -324,6 +324,18 @@ int main(int argc, char *argv[]) {
 					vars = vars->next_variable;
 				}
 
+				// get the real list length we need
+				int real_count = 0;
+				for (netsnmp_variable_list *runner = response->variables; runner; runner = runner->next_variable) {
+					if (vars->type == ASN_OCTET_STR) {
+						real_count ++;
+					}
+				}
+
+				if (real_count > ifNumber) {
+					ifNumber = real_count;
+				}
+
 				interfaces = (struct ifStruct *)calloc((size_t)ifNumber,
 													   sizeof(struct ifStruct));
 				oldperfdata = (struct ifStruct *)calloc(

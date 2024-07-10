@@ -324,6 +324,18 @@ int main(int argc, char *argv[]) {
 					vars = vars->next_variable;
 				}
 
+				// get the real list length we need
+				int real_count = 0;
+				for (netsnmp_variable_list *runner = response->variables; runner; runner = runner->next_variable) {
+					if (vars->type == ASN_OCTET_STR) {
+						real_count ++;
+					}
+				}
+
+				if (real_count > ifNumber) {
+					ifNumber = real_count;
+				}
+
 				interfaces = (struct ifStruct *)calloc((size_t)ifNumber,
 													   sizeof(struct ifStruct));
 				oldperfdata = (struct ifStruct *)calloc(
@@ -365,15 +377,18 @@ int main(int argc, char *argv[]) {
 				if (vars->type == ASN_OCTET_STR) {
 					if (config.trimdescr && config.trimdescr < vars->val_len) {
 						interfaces[count].index =
-							(int)vars->name[(vars->name_length - 1)];
+							vars->name[(vars->name_length - 1)];
+
 						MEMCPY(interfaces[count].descr,
 							   (vars->val.string) + config.trimdescr,
 							   vars->val_len - config.trimdescr);
+
 						TERMSTR(interfaces[count].descr,
 								vars->val_len - config.trimdescr);
 					} else {
 						interfaces[count].index =
-							(int)vars->name[(vars->name_length - 1)];
+							vars->name[(vars->name_length - 1)];
+
 						MEMCPY(interfaces[count].descr, vars->val.string,
 							   vars->val_len);
 						TERMSTR(interfaces[count].descr, vars->val_len);

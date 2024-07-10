@@ -8,11 +8,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      CFLAGS: "-Wall" 
+      CFLAGS: "-Wall -Werror"
 
     steps:
     - uses: actions/checkout@v4
- 
+
     - uses: actions/setup-python@v5
       with:
         python-version: '3.x'
@@ -41,18 +41,18 @@ jobs:
       run: sleep 30s
       shell: bash
 
-    - name: check_interfaces
+    - name: check_interfaces with some cisco stuff
       run: ./check_interfaces -h 127.0.0.1 --port=1611 -c cisco-c3560 -d
 
   clang-build:
     runs-on: ubuntu-latest
     env:
       CC: clang
-      CFLAGS: "-Wall" 
+      CFLAGS: "-Wall"
 
     steps:
     - uses: actions/checkout@v4
- 
+
     - uses: actions/setup-python@v5
       with:
         python-version: '3.x'
@@ -81,5 +81,5 @@ jobs:
       run: sleep 30s
       shell: bash
 
-    - name: check_interfaces
+    - name: check_interfaces with some cisco stuff
       run: ./check_interfaces -h 127.0.0.1 --port=1611 -c cisco-c3560 -d

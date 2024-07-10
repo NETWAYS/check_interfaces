@@ -45,7 +45,7 @@ jobs:
       run: ./check_interfaces -h 127.0.0.1 --port=1611 -c cisco-c3560 -d
 
     - name: check_interfaces with lying hpe-procurve
-      run: ./check_interfaces -h 127.0.0.1 --port=1611 -c network/switch/hpe-procurve-516733-b21 -d
+      run: ./check_interfaces -h 127.0.0.1 --port=1611 -c network/switch/hpe-procurve-516733-b21 -d -t 250000
 
 
   clang-build:
@@ -89,4 +89,4 @@ jobs:
       run: ./check_interfaces -h 127.0.0.1 --port=1611 -c cisco-c3560 -d
 
     - name: check_interfaces with lying hpe-procurve
-      run: ./check_interfaces -h 127.0.0.1 --port=1611 -c network/switch/hpe-procurve-516733-b21 -d
+      run: ./check_interfaces -h 127.0.0.1 --port=1611 -c network/switch/hpe-procurve-516733-b21 -d -t 250000

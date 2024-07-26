@@ -1,5 +1,5 @@
 AC_PREREQ([2.71])
-AC_INIT([check_interfaces],[1.4.1])
+AC_INIT([check_interfaces],[1.4.2])
 AC_PREFIX_DEFAULT(/usr/local/nagios)
 AC_PROG_CC()
 AC_PROG_INSTALL()

@@ -1,5 +1,3 @@
-
-
 // This one is needed on FreeBSD and it has to be before the others or at least some of them
 #include <getopt.h>
 
@@ -95,22 +93,24 @@ typedef enum returncode returncode_t;
 
 // Forward declarations
 void parse_and_check_commandline(int argc, char **argv, struct configuration_struct *config);
-bool fetch_interface_aliases(struct configuration_struct *, char **, netsnmp_session *ss, netsnmp_session *session,
-							 struct ifStruct *interfaces, int ifNumber);
-bool fetch_interface_names(struct configuration_struct *, char **oid_namesp, netsnmp_session *ss, netsnmp_session *session,
-						   struct ifStruct *interfaces, int ifNumber);
+bool fetch_interface_aliases(struct configuration_struct * /*config*/, char ** /*oid_aliasp*/, netsnmp_session *snmp_session,
+							 netsnmp_session *session, struct ifStruct *interfaces, int ifNumber);
+bool fetch_interface_names(struct configuration_struct * /*config*/, char **oid_namesp, netsnmp_session *snmp_session,
+						   netsnmp_session *session, struct ifStruct *interfaces, int ifNumber);
 returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata, long double starttime,
 						  struct ifStruct *interfaces, String *out, char **if_vars, unsigned int number_of_matched_interfaces,
-						  struct timeval *tv, int uptime, int ifNumber);
+						  struct timeval *time_value, int uptime, int ifNumber);
 void print_version(void);
 
 int main(int argc, char *argv[]) {
-	netsnmp_session session, *ss;
+	netsnmp_session session;
+	netsnmp_session *snmp_session;
 	netsnmp_pdu *pdu;
 	netsnmp_pdu *response;
 
 	netsnmp_variable_list *vars;
-	int status, status2;
+	int status;
+	int status2;
 	int count = 0; /* used for: the number of interfaces we receive, the number
 					  of regex matches */
 	size_t size;
@@ -179,10 +179,10 @@ int main(int argc, char *argv[]) {
 
 	parse_and_check_commandline(argc, argv, &config);
 
-	struct timeval tv;
-	struct timezone tz;
-	gettimeofday(&tv, &tz);
-	starttime = (long double)tv.tv_sec + (((long double)tv.tv_usec) / 1000000);
+	struct timeval time_value;
+	struct timezone time_zone;
+	gettimeofday(&time_value, &time_zone);
+	starttime = (long double)time_value.tv_sec + (((long double)time_value.tv_usec) / 1000000);
 
 	// +1 for the `:` between hostname and port
 	size_t peername_max_len = strlen(config.hostname) + strlen(config.port) + 1;
@@ -201,10 +201,10 @@ int main(int argc, char *argv[]) {
 #endif
 	if (config.user) {
 		/* use snmpv3 */
-		ss = start_session_v3(&session, config.user, config.auth_proto, config.auth_pass, config.priv_proto, config.priv_pass, peername,
-							  config.global_timeout, config.session_retries);
+		snmp_session = start_session_v3(&session, config.user, config.auth_proto, config.auth_pass, config.priv_proto, config.priv_pass,
+										peername, config.global_timeout, config.session_retries);
 	} else {
-		ss = start_session(&session, config.community, peername, config.mode, config.global_timeout, config.session_retries);
+		snmp_session = start_session(&session, config.community, peername, config.mode, config.global_timeout, config.session_retries);
 	}
 #ifdef DEBUG
 	benchmark_end();
@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
 		benchmark_start("Send SNMP request for OIDs: %s", implode_result);
 #endif
 		/* send the request */
-		status = snmp_synch_response(ss, pdu, &response);
+		status = snmp_synch_response(snmp_session, pdu, &response);
 #ifdef DEBUG
 		benchmark_end();
 		free(implode_result);
@@ -403,11 +403,11 @@ int main(int argc, char *argv[]) {
 			} else if (status == STAT_TIMEOUT) {
 				printf("Timeout while reading interface descriptions from %s\n", session.peername);
 				exit(EXITCODE_TIMEOUT);
-			} else if (status == STAT_ERROR && ss->s_snmp_errno == SNMPERR_TIMEOUT) {
+			} else if (status == STAT_ERROR && snmp_session->s_snmp_errno == SNMPERR_TIMEOUT) {
 				printf("Timeout\n");
 				exit(EXITCODE_TIMEOUT);
 			} else {
-				snmp_sess_perror("snmp_bulkget", ss);
+				snmp_sess_perror("snmp_bulkget", snmp_session);
 			}
 			exit(2);
 		}
@@ -434,7 +434,7 @@ int main(int argc, char *argv[]) {
 	 */
 
 	if (config.match_aliases_flag && config.iface_regex) {
-		fetch_interface_aliases(&config, oid_aliasp, ss, &session, interfaces, ifNumber);
+		fetch_interface_aliases(&config, oid_aliasp, snmp_session, &session, interfaces, ifNumber);
 	}
 
 	/* If the get_names_flag is set, we also have to get the interface names so
@@ -445,7 +445,7 @@ int main(int argc, char *argv[]) {
 	 * way
 	 * :-) */
 	if (config.get_names_flag && config.iface_regex) {
-		fetch_interface_names(&config, oid_namesp, ss, &session, interfaces, ifNumber);
+		fetch_interface_names(&config, oid_namesp, snmp_session, &session, interfaces, ifNumber);
 	}
 
 	if (config.iface_regex) {
@@ -513,7 +513,7 @@ int main(int argc, char *argv[]) {
 		if (!interfaces[j].ignore) {
 
 			/* fetch the standard values first */
-			if (create_request(ss, &OIDp, oid_vals, interfaces[j].index, &response, config.sleep_usecs)) {
+			if (create_request(snmp_session, &OIDp, oid_vals, interfaces[j].index, &response, config.sleep_usecs)) {
 				for (vars = response->variables; vars; vars = vars->next_variable) {
 					k = -1;
 					/* compare the received value to the requested value */
@@ -582,7 +582,7 @@ int main(int argc, char *argv[]) {
 			}
 
 			/* now fetch the extended oids (64 bit counters etc.) */
-			if (create_request(ss, &OIDp, oid_extended, interfaces[j].index, &response, config.sleep_usecs)) {
+			if (create_request(snmp_session, &OIDp, oid_extended, interfaces[j].index, &response, config.sleep_usecs)) {
 				for (vars = response->variables; vars; vars = vars->next_variable) {
 					k = -1;
 					/* compare the received value to the requested value */
@@ -646,7 +646,8 @@ int main(int argc, char *argv[]) {
 			}
 
 			/* now fetch the Cisco-specific extended oids */
-			if (config.mode == CISCO && create_request(ss, &OIDp, oid_extended_cisco, interfaces[j].index, &response, config.sleep_usecs)) {
+			if (config.mode == CISCO &&
+				create_request(snmp_session, &OIDp, oid_extended_cisco, interfaces[j].index, &response, config.sleep_usecs)) {
 				for (vars = response->variables; vars; vars = vars->next_variable) {
 					k = -1;
 					/* compare the received value to the requested value */
@@ -661,7 +662,7 @@ int main(int argc, char *argv[]) {
 					{
 					case 0: /* portAdditionalOperStatus */
 						if (vars->type == ASN_OCTET_STR) {
-							interfaces[j].err_disable = !!(vars->val.string[1] & (unsigned char)32u);
+							interfaces[j].err_disable = !!(vars->val.string[1] & (unsigned char)32U);
 						}
 						break;
 					}
@@ -688,14 +689,14 @@ int main(int argc, char *argv[]) {
 
 	/* calculate time taken, print perfdata */
 
-	gettimeofday(&tv, &tz);
+	gettimeofday(&time_value, &time_zone);
 
-	returncode_t exit_code = print_output(&config, oldperfdata, starttime, interfaces, &out, if_vars, count, &tv, uptime, ifNumber);
+	returncode_t exit_code = print_output(&config, oldperfdata, starttime, interfaces, &out, if_vars, count, &time_value, uptime, ifNumber);
 
 #ifdef DEBUG
 	benchmark_start("Close SNMP session");
 #endif
-	snmp_close(ss);
+	snmp_close(snmp_session);
 	snmp_close(&session);
 #ifdef DEBUG
 	benchmark_end();
@@ -707,7 +708,7 @@ int main(int argc, char *argv[]) {
 
 returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata, long double starttime,
 						  struct ifStruct *interfaces, String *out, char **if_vars, unsigned int number_of_matched_interfaces,
-						  struct timeval *tv, int uptime, int ifNumber) {
+						  struct timeval *time_value, int uptime, int ifNumber) {
 
 	unsigned int parsed_lastcheck = 0;
 
@@ -741,7 +742,8 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 	bool warnflag = false;
 
 	for (int i = 0; i < ifNumber; i++) {
-		double inload = 0, outload = 0;
+		double inload = 0;
+		double outload = 0;
 		if (!interfaces[i].ignore) {
 			int warn = 0;
 
@@ -878,7 +880,8 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 
 			if (config->lastcheck && (interfaces[i].speed || config->speed) &&
 				(interfaces[i].inbitps > 0ULL || interfaces[i].outbitps > 0ULL) && !interfaces[i].admin_down) {
-				char *ins, *outs;
+				char *ins;
+				char *outs;
 				gauge_to_si(interfaces[i].inbitps, &ins);
 				gauge_to_si(interfaces[i].outbitps, &outs);
 
@@ -886,7 +889,7 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 				free(ins);
 				free(outs);
 			}
-			if (perf.len > 0u && perf.text[(perf.len - 1u)] != '\n') {
+			if (perf.len > 0U && perf.text[(perf.len - 1U)] != '\n') {
 				addstr(&perf, "\n");
 			}
 		}
@@ -908,7 +911,7 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 	/* now print performance data */
 
 	printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf checktime=%ld", (int)out->len, out->text, number_of_matched_interfaces,
-		   (((long double)tv->tv_sec + ((long double)tv->tv_usec / 1000000)) - starttime), tv->tv_sec);
+		   (((long double)time_value->tv_sec + ((long double)time_value->tv_usec / 1000000)) - starttime), time_value->tv_sec);
 	if (uptime) {
 		printf(" %sdevice::check_snmp::uptime=%us", config->prefix ? config->prefix : "", uptime);
 	}
@@ -932,15 +935,15 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 
 	if (errorflag) {
 		return CRITICAL;
-	} else if (warnflag) {
-		return WARNING;
-	} else {
-		return OK;
 	}
+	if (warnflag) {
+		return WARNING;
+	}
+	return OK;
 }
 
-bool fetch_interface_aliases(struct configuration_struct *config, char **oid_aliasp, netsnmp_session *ss, netsnmp_session *session,
-							 struct ifStruct *interfaces, int ifNumber) {
+bool fetch_interface_aliases(struct configuration_struct *config, char **oid_aliasp, netsnmp_session *snmp_session,
+							 netsnmp_session *session, struct ifStruct *interfaces, int ifNumber) {
 	bool lastifflag = false;
 	int count = 0;
 	netsnmp_pdu *pdu;
@@ -974,7 +977,7 @@ bool fetch_interface_aliases(struct configuration_struct *config, char **oid_ali
 #endif
 		/* send the request */
 		int status;
-		status = snmp_synch_response(ss, pdu, &response);
+		status = snmp_synch_response(snmp_session, pdu, &response);
 #ifdef DEBUG
 		benchmark_end();
 		free(implode_result);
@@ -1047,7 +1050,7 @@ bool fetch_interface_aliases(struct configuration_struct *config, char **oid_ali
 				printf("Timeout while reading interface aliases from %s\n", (*session).peername);
 				exit(EXITCODE_TIMEOUT);
 			} else {
-				snmp_sess_perror("snmp_bulkget", ss);
+				snmp_sess_perror("snmp_bulkget", snmp_session);
 			}
 			exit(2);
 		}
@@ -1063,7 +1066,7 @@ bool fetch_interface_aliases(struct configuration_struct *config, char **oid_ali
 	return true;
 }
 
-bool fetch_interface_names(struct configuration_struct *config, char **oid_namesp, netsnmp_session *ss, netsnmp_session *session,
+bool fetch_interface_names(struct configuration_struct *config, char **oid_namesp, netsnmp_session *snmp_session, netsnmp_session *session,
 						   struct ifStruct *interfaces, int ifNumber) {
 	bool lastifflag = false;
 	netsnmp_pdu *pdu;
@@ -1099,7 +1102,7 @@ bool fetch_interface_names(struct configuration_struct *config, char **oid_names
 		benchmark_start("Send SNMP request for OIDs: %s", implode_result);
 #endif
 		/* send the request */
-		int status = snmp_synch_response(ss, pdu, &response);
+		int status = snmp_synch_response(snmp_session, pdu, &response);
 #ifdef DEBUG
 		benchmark_end();
 		free(implode_result);
@@ -1166,7 +1169,7 @@ bool fetch_interface_names(struct configuration_struct *config, char **oid_names
 				printf("Timeout while reading interface names from %s\n", (*session).peername);
 				exit(EXITCODE_TIMEOUT);
 			} else {
-				snmp_sess_perror("snmp_bulkget", ss);
+				snmp_sess_perror("snmp_bulkget", snmp_session);
 			}
 			exit(2);
 		}
@@ -1400,7 +1403,6 @@ void print_version(void) {
 }
 
 int usage(char *progname) {
-	int i;
 	printf(
 #ifdef PACKAGE_STRING
 		PACKAGE_STRING "\n\n"
@@ -1424,7 +1426,7 @@ int usage(char *progname) {
 	printf(" -x|--trim\t\tcut this number of characters from the start of "
 		   "interface descriptions\n");
 	printf(" -m|--mode\t\tspecial operating mode (");
-	for (i = 0; modes[i]; i++) {
+	for (int i = 0; modes[i]; i++) {
 		printf("%s%s", i ? "," : "", modes[i]);
 	}
 	printf(")\n");

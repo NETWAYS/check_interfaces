@@ -94,9 +94,9 @@ int gauge_to_si(u64 bignum, char **str) {
 #ifdef HAVE_POW
 	if (i) {
 		return asprintf(str, "%0.2f%c", ((double)bignum / pow(1000, i)), units[i - 1]);
-	} else {
-		return asprintf(str, "%Ld", bignum);
 	}
+	return asprintf(str, "%Ld", bignum);
+
 #else
 	return asprintf(str, "%Ld", bignum);
 #endif
@@ -110,7 +110,7 @@ void benchmark_start(char const *format, ...) {
 	{
 		va_list args;
 		va_start(args, format);
-		int benchmark_task_length = vsnprintf(NULL, 0u, format, args);
+		int benchmark_task_length = vsnprintf(NULL, 0U, format, args);
 		va_end(args);
 		benchmark_task = (char *)malloc(benchmark_task_length + 1);
 		benchmark_task[benchmark_task_length] = 0;
@@ -138,7 +138,7 @@ void benchmark_end(void) {
 }
 
 char *implode(char const *glue, char **pieces) {
-	size_t total_len = 0u;
+	size_t total_len = 0U;
 	char **walk_pieces = pieces;
 	while (*walk_pieces != NULL) {
 		total_len += strlen(*walk_pieces++);
@@ -149,7 +149,7 @@ char *implode(char const *glue, char **pieces) {
 		total_len += strlen(glue) * (size_t)(walk_pieces_diff - 1);
 	}
 
-	char *result = (char *)malloc(total_len + 1u);
+	char *result = (char *)malloc(total_len + 1U);
 
 	if (walk_pieces_diff > 0) {
 		strcpy(result, *pieces);

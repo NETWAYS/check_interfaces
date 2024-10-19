@@ -114,6 +114,7 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 		long double starttime, struct ifStruct *interfaces, String *out, char **if_vars,
 		unsigned int number_of_matched_interfaces, struct timeval *tv, int uptime,
 		int ifNumber);
+void print_version(void);
 
 int main(int argc, char *argv[]) {
 	netsnmp_session session, *ss;
@@ -1285,9 +1286,7 @@ bool fetch_interface_names(struct configuration_struct* config, char **oid_names
 	return true;
 }
 
-enum {
-	PORT_OPTION = CHAR_MAX + 1
-};
+enum { PORT_OPTION = CHAR_MAX + 1, VERSION_OPTION = CHAR_MAX + 2 };
 
 void parse_and_check_commandline(int argc, char **argv,
 								 struct configuration_struct *config) {
@@ -1330,6 +1329,7 @@ void parse_and_check_commandline(int argc, char **argv,
 		{"sleep", required_argument, NULL, 3},
 		{"retries", required_argument, NULL, 4},
 		{"max-repetitions", required_argument, NULL, 5},
+		{"version", no_argument, NULL, VERSION_OPTION},
 		{NULL, 0, NULL, 0}};
 
 	while ((opt = getopt_long(argc, argv,
@@ -1430,6 +1430,8 @@ void parse_and_check_commandline(int argc, char **argv,
 		case 5:
 			config->pdu_max_repetitions = strtol(optarg, NULL, 10);
 			break;
+		case VERSION_OPTION:
+			print_version();
 		case '?':
 		default:
 			exit(usage(progname));
@@ -1493,6 +1495,13 @@ void parse_and_check_commandline(int argc, char **argv,
 		setenv("MIBS", "", 1);
 }
 
+void print_version(void) {
+#ifdef PACKAGE_VERSION
+	puts(PACKAGE_VERSION);
+#endif // PACKAGE_VERSION
+	exit(0);
+}
+
 int usage(char *progname) {
 	int i;
 	printf(
@@ -1547,6 +1556,7 @@ int usage(char *progname) {
 	printf("    --max-repetitions\t\tsee "
 		   "<http://www.net-snmp.org/docs/man/snmpbulkwalk.html>\n");
 	printf("    --port\t\tPort (default 161)\n");
+	printf("    --version\t\tPrint program version\n");
 	printf("\n");
 	return 3;
 }

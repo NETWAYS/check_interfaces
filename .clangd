@@ -1,0 +1,10 @@
+CompileFlags:
+  # Treat code as C++, use C++17 standard, enable more warnings.
+  Add: [-xc, -std=c17, -Wall, -Wextra, -Wno-missing-prototypes, -Wpedantic]
+Diagnostics:
+  # Tweak Clang-Tidy checks.
+  ClangTidy:
+    Add: [performance*, modernize*, readability*]
+    CheckOptions:
+      readability-function-cognitive-complexity.DescribeBasicIncrements: false
+      readability-function-cognitive-complexity.Threshold: 50

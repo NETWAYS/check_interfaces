@@ -1,18 +1,18 @@
 
 /* asprintf */
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+#	define _GNU_SOURCE
 #endif
 
 #include <stdarg.h>
 #include <stdio.h>
 
 #ifdef HAVE_POW
-#include <math.h>
+#	include <math.h>
 #endif
 
 #ifndef U64
-#define U64
+#	define U64
 typedef unsigned long long u64;
 #endif
 

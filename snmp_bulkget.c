@@ -52,8 +52,8 @@
 
 /* asprintf and getopt_long */
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#include <net-snmp/library/transform_oids.h>
+#	define _GNU_SOURCE
+#	include <net-snmp/library/transform_oids.h>
 #endif
 #include <stdio.h>
 
@@ -82,14 +82,11 @@
  *  make non-posix code optional e.g. asprintf
  */
 
-
-
 #ifdef DEBUG
 static char *implode_result;
 #endif
 
-void print64(struct counter64 *count64, unsigned long *count32) {
-
+void print64(struct counter64 *count64, const unsigned long *count32) {
 	if (!(isZeroU64(count64))) {
 		char buffer[I64CHARSZ + 1];
 		printU64(buffer, count64);
@@ -107,16 +104,18 @@ void print64(struct counter64 *count64, unsigned long *count32) {
 	}
 }
 
-u64 convertto64(struct counter64 *val64, unsigned long *val32) {
+u64 convertto64(struct counter64 *val64, const unsigned long *val32) {
 	u64 temp64;
 
 	if ((isZeroU64(val64))) {
-		if (val32)
+		if (val32) {
 			temp64 = (u64)(*val32);
-		else
+		} else {
 			temp64 = 0;
-	} else
+		}
+	} else {
 		temp64 = ((u64)(val64->high) << 32) + val64->low;
+	}
 
 	return (temp64);
 }
@@ -125,29 +124,26 @@ u64 subtract64(u64 big64, u64 small64, unsigned int lastcheck, int uptime) {
 	if (big64 < small64) {
 		/* either the device was reset or the counter overflowed
 		 */
-		if ((lastcheck + UPTIME_TOLERANCE_IN_SECS) > uptime)
+		if ((lastcheck + UPTIME_TOLERANCE_IN_SECS) > uptime) {
 			/* the device was reset, or the uptime counter rolled over
 			 * so play safe and return 0 */
 			return 0;
-		else {
-			/* we assume there was exactly 1 counter rollover
-			 * - of course there may have been more than 1 if it
-			 * is a 32 bit counter ...
-			 */
-			if (small64 > OFLO32)
-				return (OFLO64 - small64 + big64);
-			else
-				return (OFLO32 - small64 + big64);
 		}
-	} else
-		return (big64 - small64);
+		/* we assume there was exactly 1 counter rollover
+		 * - of course there may have been more than 1 if it
+		 * is a 32 bit counter ...
+		 */
+		if (small64 > OFLO32) {
+			return (OFLO64 - small64 + big64);
+		}
+		return (OFLO32 - small64 + big64);
+	}
+	return (big64 - small64);
 }
 
-netsnmp_session *start_session(netsnmp_session *session, char *community,
-							   char *hostname, enum mode_enum mode,
-							   unsigned long global_timeout,
+netsnmp_session *start_session(netsnmp_session *session, char *community, char *hostname, enum mode_enum mode, unsigned long global_timeout,
 							   int session_retries) {
-	netsnmp_session *ss;
+	netsnmp_session *snmp_session;
 
 	/*
 	 * Initialize the SNMP library
@@ -159,10 +155,11 @@ netsnmp_session *start_session(netsnmp_session *session, char *community,
 	session->peername = hostname;
 
 	/* bulk gets require V2c or later */
-	if (mode == NONBULK)
+	if (mode == NONBULK) {
 		session->version = SNMP_VERSION_1;
-	else
+	} else {
 		session->version = SNMP_VERSION_2c;
+	}
 
 	session->community = (u_char *)community;
 	session->community_len = strlen(community);
@@ -173,23 +170,20 @@ netsnmp_session *start_session(netsnmp_session *session, char *community,
 	 * Open the session
 	 */
 	SOCK_STARTUP;
-	ss = snmp_open(session); /* establish the session */
+	snmp_session = snmp_open(session); /* establish the session */
 
-	if (!ss) {
+	if (!snmp_session) {
 		snmp_sess_perror("snmp_bulkget", session);
 		SOCK_CLEANUP;
 		exit(1);
 	}
 
-	return (ss);
+	return (snmp_session);
 }
 
-netsnmp_session *start_session_v3(netsnmp_session *session, char *user,
-								  char *auth_proto, char *auth_pass,
-								  char *priv_proto, char *priv_pass,
-								  char *hostname, unsigned long global_timeout,
-								  int session_retries) {
-	netsnmp_session *ss;
+netsnmp_session *start_session_v3(netsnmp_session *session, char *user, char *auth_proto, char *auth_pass, char *priv_proto,
+								  char *priv_pass, char *hostname, unsigned long global_timeout, int session_retries) {
+	netsnmp_session *snmp_session;
 
 	init_snmp("snmp_bulkget");
 
@@ -204,13 +198,11 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user,
 
 	if (priv_proto && priv_pass) {
 		if (!strcmp(priv_proto, "AES")) {
-			session->securityPrivProto = snmp_duplicate_objid(
-				usmAESPrivProtocol, USM_PRIV_PROTO_AES_LEN);
+			session->securityPrivProto = snmp_duplicate_objid(usmAESPrivProtocol, USM_PRIV_PROTO_AES_LEN);
 			session->securityPrivProtoLen = USM_PRIV_PROTO_AES_LEN;
 #ifdef HAVE_USM_DES_PRIV_PROTOCOL
 		} else if (!strcmp(priv_proto, "DES")) {
-			session->securityPrivProto = snmp_duplicate_objid(
-				usmDESPrivProtocol, USM_PRIV_PROTO_DES_LEN);
+			session->securityPrivProto = snmp_duplicate_objid(usmDESPrivProtocol, USM_PRIV_PROTO_DES_LEN);
 			session->securityPrivProtoLen = USM_PRIV_PROTO_DES_LEN;
 #endif
 		} else {
@@ -226,28 +218,22 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user,
 
 	if (auth_proto && auth_pass) {
 		if (!strcmp(auth_proto, "SHA")) {
-			session->securityAuthProto = snmp_duplicate_objid(
-				usmHMACSHA1AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
+			session->securityAuthProto = snmp_duplicate_objid(usmHMACSHA1AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
 			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
 		} else if (!strcmp(auth_proto, "SHA-224")) {
-			session->securityAuthProto = snmp_duplicate_objid(
-				usmHMAC128SHA224AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
+			session->securityAuthProto = snmp_duplicate_objid(usmHMAC128SHA224AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
 			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
 		} else if (!strcmp(auth_proto, "SHA-256")) {
-			session->securityAuthProto = snmp_duplicate_objid(
-				usmHMAC192SHA256AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
+			session->securityAuthProto = snmp_duplicate_objid(usmHMAC192SHA256AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
 			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
 		} else if (!strcmp(auth_proto, "SHA-384")) {
-			session->securityAuthProto = snmp_duplicate_objid(
-				usmHMAC256SHA384AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
+			session->securityAuthProto = snmp_duplicate_objid(usmHMAC256SHA384AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
 			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
 		} else if (!strcmp(auth_proto, "SHA-512")) {
-			session->securityAuthProto = snmp_duplicate_objid(
-				usmHMAC384SHA512AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
+			session->securityAuthProto = snmp_duplicate_objid(usmHMAC384SHA512AuthProtocol, USM_AUTH_PROTO_SHA_LEN);
 			session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
 		} else if (!strcmp(auth_proto, "MD5")) {
-			session->securityAuthProto = snmp_duplicate_objid(
-				usmHMACMD5AuthProtocol, USM_AUTH_PROTO_MD5_LEN);
+			session->securityAuthProto = snmp_duplicate_objid(usmHMACMD5AuthProtocol, USM_AUTH_PROTO_MD5_LEN);
 			session->securityAuthProtoLen = USM_AUTH_PROTO_MD5_LEN;
 		} else {
 			printf("Unknown auth protocol %s\n", auth_proto);
@@ -260,21 +246,16 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user,
 		session->securityPrivKeyLen = 0;
 	}
 
-	if ((session->securityLevel == SNMP_SEC_LEVEL_AUTHPRIV) ||
-		(session->securityLevel == SNMP_SEC_LEVEL_AUTHNOPRIV)) {
-		if (generate_Ku(session->securityAuthProto,
-						session->securityAuthProtoLen,
-						(unsigned char *)auth_pass, strlen(auth_pass),
-						session->securityAuthKey,
-						&session->securityAuthKeyLen) != SNMPERR_SUCCESS)
+	if ((session->securityLevel == SNMP_SEC_LEVEL_AUTHPRIV) || (session->securityLevel == SNMP_SEC_LEVEL_AUTHNOPRIV)) {
+		if (generate_Ku(session->securityAuthProto, session->securityAuthProtoLen, (unsigned char *)auth_pass, strlen(auth_pass),
+						session->securityAuthKey, &session->securityAuthKeyLen) != SNMPERR_SUCCESS) {
 			printf("Error generating AUTH sess\n");
+		}
 		if (session->securityLevel == SNMP_SEC_LEVEL_AUTHPRIV) {
-			if (generate_Ku(session->securityAuthProto,
-							session->securityAuthProtoLen,
-							(unsigned char *)priv_pass, strlen(priv_pass),
-							session->securityPrivKey,
-							&session->securityPrivKeyLen) != SNMPERR_SUCCESS)
+			if (generate_Ku(session->securityAuthProto, session->securityAuthProtoLen, (unsigned char *)priv_pass, strlen(priv_pass),
+							session->securityPrivKey, &session->securityPrivKeyLen) != SNMPERR_SUCCESS) {
 				printf("Error generating PRIV sess\n");
+			}
 		}
 	}
 
@@ -285,15 +266,15 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user,
 	 * Open the session
 	 */
 	SOCK_STARTUP;
-	ss = snmp_open(session); /* establish the session */
+	snmp_session = snmp_open(session); /* establish the session */
 
-	if (!ss) {
+	if (!snmp_session) {
 		snmp_sess_perror("snmp_bulkget", session);
 		SOCK_CLEANUP;
 		exit(1);
 	}
 
-	return (ss);
+	return (snmp_session);
 }
 
 /*
@@ -307,11 +288,13 @@ netsnmp_session *start_session_v3(netsnmp_session *session, char *user,
  * outOctets=15023959911c inDiscards=0c outDiscards=0c inErrors=0c
  * outErrors=5431c inUcast=34020897c outUcast=35875426c speed=1000000000
  */
-int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
-				   char *prefix, unsigned int *parsed_lastcheck,
-				   int ifNumber,
-					 char *perfdata_labels[]) {
-	char *last = 0, *last2 = 0, *word, *interface = 0, *var;
+int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata, char *prefix, unsigned int *parsed_lastcheck, int ifNumber,
+				   char *perfdata_labels[]) {
+	char *last = 0;
+	char *last2 = 0;
+	char *word;
+	char *interface = 0;
+	char *var;
 	char *ptr;
 #ifdef DEBUG
 	int plugins;
@@ -321,8 +304,7 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
 	char *valstr;
 
 	/* first split at spaces */
-	for (word = strtok_r(oldperfdatap, " ", &last); word;
-		 word = strtok_r(NULL, " ", &last)) {
+	for (word = strtok_r(oldperfdatap, " ", &last); word; word = strtok_r(NULL, " ", &last)) {
 		if ((ptr = strstr(word, "::check_multi::plugins="))) {
 #ifdef DEBUG
 			/* check multi perfdata found */
@@ -357,25 +339,29 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
 
 			/* remove any prefix */
 			if (prefix) {
-				if (strlen(interface) > strlen(prefix))
+				if (strlen(interface) > strlen(prefix)) {
 					interface = interface + strlen(prefix);
+				}
 			}
 #ifdef DEBUG
-			if (interface)
+			if (interface) {
 				fprintf(stderr, "interface %s found\n", interface);
+			}
 #endif
 			word = (ptr + strlen("::check_snmp::"));
 		}
 
 		/* finally split the name=value pair */
 		valstr = strchr(word, '=');
-		if (valstr)
+		if (valstr) {
 			value = strtoull(valstr + 1, NULL, 10);
+		}
 
 		var = strtok_r(word, "=", &last2);
 
-		if (interface && var && valstr)
+		if (interface && var && valstr) {
 			set_value(oldperfdata, interface, var, value, ifNumber, perfdata_labels);
+		}
 	}
 
 	return (0);
@@ -384,34 +370,34 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata,
 /*
  * fill the ifStruct with values
  */
-void set_value(struct ifStruct *oldperfdata, char *interface, char *var,
-			   u64 value, int ifNumber, char *if_vars[]) {
+void set_value(struct ifStruct *oldperfdata, char *interface, char *var, u64 value, int ifNumber, char *if_vars[]) {
 	int i;
 
 	for (i = 0; i < ifNumber; i++) {
 		if (strcmp(interface, oldperfdata[i].descr) == 0) {
-			if (strcmp(var, if_vars[0]) == 0)
+			if (strcmp(var, if_vars[0]) == 0) {
 				oldperfdata[i].inOctets = value;
-			else if (strcmp(var, if_vars[1]) == 0)
+			} else if (strcmp(var, if_vars[1]) == 0) {
 				oldperfdata[i].outOctets = value;
-			else if (strcmp(var, if_vars[2]) == 0)
+			} else if (strcmp(var, if_vars[2]) == 0) {
 				oldperfdata[i].inDiscards = value;
-			else if (strcmp(var, if_vars[3]) == 0)
+			} else if (strcmp(var, if_vars[3]) == 0) {
 				oldperfdata[i].outDiscards = value;
-			else if (strcmp(var, if_vars[4]) == 0)
+			} else if (strcmp(var, if_vars[4]) == 0) {
 				oldperfdata[i].inErrors = value;
-			else if (strcmp(var, if_vars[5]) == 0)
+			} else if (strcmp(var, if_vars[5]) == 0) {
 				oldperfdata[i].outErrors = value;
-			else if (strcmp(var, if_vars[6]) == 0)
+			} else if (strcmp(var, if_vars[6]) == 0) {
 				oldperfdata[i].inUcast = value;
-			else if (strcmp(var, if_vars[7]) == 0)
+			} else if (strcmp(var, if_vars[7]) == 0) {
 				oldperfdata[i].outUcast = value;
-			else if (strcmp(var, if_vars[8]) == 0)
+			} else if (strcmp(var, if_vars[8]) == 0) {
 				oldperfdata[i].speed = value;
-			else if (strcmp(var, if_vars[9]) == 0)
+			} else if (strcmp(var, if_vars[9]) == 0) {
 				oldperfdata[i].inbitps = value;
-			else if (strcmp(var, if_vars[10]) == 0)
+			} else if (strcmp(var, if_vars[10]) == 0) {
 				oldperfdata[i].outbitps = value;
+			}
 
 			continue;
 		}
@@ -422,22 +408,23 @@ void set_value(struct ifStruct *oldperfdata, char *interface, char *var,
  * pass this function a list of OIDs to retrieve
  * and it will fetch them with a single get
  */
-int create_request(netsnmp_session *ss, struct OIDStruct **OIDpp,
-				   char **oid_list, int index, netsnmp_pdu **response,
+int create_request(netsnmp_session *snmp_session, struct OIDStruct **OIDpp, char **oid_list, int index, netsnmp_pdu **response,
 				   unsigned int sleep_usecs) {
 	netsnmp_pdu *pdu;
-	int status, i;
+	int status;
 	struct OIDStruct *OIDp;
 
 	/* store all the parsed OIDs in a structure for easy comparison */
-	for (i = 0; oid_list[i]; i++)
-		;
-	OIDp = (struct OIDStruct *)calloc(i, sizeof(*OIDp));
+	size_t number_of_oids = 0;
+	for (int i = 0; oid_list[i]; i++) {
+		number_of_oids = i + 1;
+	}
+	OIDp = (struct OIDStruct *)calloc(number_of_oids, sizeof(*OIDp));
 
 	/* here we are retrieving single values, not walking the table */
 	pdu = snmp_pdu_create(SNMP_MSG_GET);
 
-	for (i = 0; oid_list[i]; i++) {
+	for (int i = 0; oid_list[i]; i++) {
 #ifdef DEBUG2
 		fprintf(stderr, "%d: adding %s\n", i, oid_list[i]);
 #endif
@@ -446,7 +433,7 @@ int create_request(netsnmp_session *ss, struct OIDStruct **OIDpp,
 		OIDp[i].name[OIDp[i].name_len++] = index;
 		snmp_add_null_var(pdu, OIDp[i].name, OIDp[i].name_len);
 	}
-	pdu->non_repeaters = i;
+	pdu->non_repeaters = number_of_oids;
 	pdu->max_repetitions = 0;
 
 	*OIDpp = OIDp;
@@ -455,41 +442,40 @@ int create_request(netsnmp_session *ss, struct OIDStruct **OIDpp,
 	implode_result = implode(", ", oid_list);
 	benchmark_start("Send SNMP request for OIDs: %s", implode_result);
 #endif
-	status = snmp_synch_response(ss, pdu, response);
+	status = snmp_synch_response(snmp_session, pdu, response);
 #ifdef DEBUG
 	benchmark_end();
 	free(implode_result);
 #endif
-	if (sleep_usecs)
+	if (sleep_usecs) {
 		usleep(sleep_usecs);
+	}
 
 	if (status == STAT_SUCCESS && (*response)->errstat == SNMP_ERR_NOERROR) {
 		return (1);
-	} else if (status == STAT_SUCCESS &&
-			   (*response)->errstat == SNMP_ERR_NOSUCHNAME) {
+	}
+	if (status == STAT_SUCCESS && (*response)->errstat == SNMP_ERR_NOSUCHNAME) {
 		/* if e.g. 64 bit counters are not supported, we will get this error */
 		return (1);
-	} else {
-		/*
-		 * FAILURE: print what went wrong!
-		 */
-
-		if (status == STAT_SUCCESS)
-			printf("Error in packet\nReason: %s\n",
-				   snmp_errstring((*response)->errstat));
-		else if (status == STAT_TIMEOUT) {
-			printf("Timeout fetching interface stats from %s ", ss->peername);
-			for (i = 0; oid_list[i]; i++) {
-				printf("%c%s", i ? ',' : '(', oid_list[i]);
-			}
-			printf(")\n");
-			exit(EXITCODE_TIMEOUT);
-		} else {
-			printf("other error\n");
-			snmp_sess_perror("snmp_bulkget", ss);
-		}
-		exit(2);
 	}
+	/*
+	 * FAILURE: print what went wrong!
+	 */
+
+	if (status == STAT_SUCCESS) {
+		printf("Error in packet\nReason: %s\n", snmp_errstring((*response)->errstat));
+	} else if (status == STAT_TIMEOUT) {
+		printf("Timeout fetching interface stats from %s ", snmp_session->peername);
+		for (int i = 0; oid_list[i]; i++) {
+			printf("%c%s", i ? ',' : '(', oid_list[i]);
+		}
+		printf(")\n");
+		exit(EXITCODE_TIMEOUT);
+	} else {
+		printf("other error\n");
+		snmp_sess_perror("snmp_bulkget", snmp_session);
+	}
+	exit(2);
 
 	return (0);
 }
@@ -509,12 +495,11 @@ int parseoids(int i, char *oid_list, struct OIDStruct *query) {
 	return (0);
 }
 
-void create_pdu(int mode, char **oidlist, netsnmp_pdu **pdu,
-				struct OIDStruct **oids, int nonrepeaters, long max) {
-	int i;
+void create_pdu(int mode, char **oidlist, netsnmp_pdu **pdu, struct OIDStruct **oids, int nonrepeaters, long max) {
 
-	if (mode == NONBULK)
+	if (mode == NONBULK) {
 		*pdu = snmp_pdu_create(SNMP_MSG_GET);
+	}
 
 	else if (mode == BINTEC) {
 		/* we cannot use a bulk get for bintec
@@ -528,7 +513,7 @@ void create_pdu(int mode, char **oidlist, netsnmp_pdu **pdu,
 		(*pdu)->max_repetitions = max;
 	}
 
-	for (i = 0; oidlist[i]; i++) {
+	for (int i = 0; oidlist[i]; i++) {
 		parseoids(i, oidlist[i], *oids);
 		snmp_add_null_var(*pdu, (*oids)[i].name, (*oids)[i].name_len);
 	}

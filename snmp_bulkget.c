@@ -415,16 +415,15 @@ int create_request(netsnmp_session *snmp_session, struct OIDStruct **OIDpp, char
 	struct OIDStruct *OIDp;
 
 	/* store all the parsed OIDs in a structure for easy comparison */
-	int last_index = 0;
+	size_t number_of_oids = 0;
 	for (int i = 0; oid_list[i]; i++) {
-		last_index = i;
+		number_of_oids = i + 1;
 	}
-	OIDp = (struct OIDStruct *)calloc(last_index, sizeof(*OIDp));
+	OIDp = (struct OIDStruct *)calloc(number_of_oids, sizeof(*OIDp));
 
 	/* here we are retrieving single values, not walking the table */
 	pdu = snmp_pdu_create(SNMP_MSG_GET);
 
-	last_index = 0;
 	for (int i = 0; oid_list[i]; i++) {
 #ifdef DEBUG2
 		fprintf(stderr, "%d: adding %s\n", i, oid_list[i]);
@@ -434,7 +433,7 @@ int create_request(netsnmp_session *snmp_session, struct OIDStruct **OIDpp, char
 		OIDp[i].name[OIDp[i].name_len++] = index;
 		snmp_add_null_var(pdu, OIDp[i].name, OIDp[i].name_len);
 	}
-	pdu->non_repeaters = last_index;
+	pdu->non_repeaters = number_of_oids;
 	pdu->max_repetitions = 0;
 
 	*OIDpp = OIDp;

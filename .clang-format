@@ -1,3 +1,12 @@
-UseTab: true
-TabWidth: 4
+BasedOnStyle: LLVM
+UseTab: ForContinuationAndIndentation
 IndentWidth: 4
+TabWidth: 4
+AllowShortIfStatementsOnASingleLine: false
+BreakBeforeBraces: Attach
+AlignConsecutiveMacros: true
+ColumnLimit: 140
+IndentPPDirectives: AfterHash
+SortIncludes: Never
+InsertBraces: true
+AllowShortEnumsOnASingleLine: false

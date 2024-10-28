@@ -1195,7 +1195,7 @@ void parse_and_check_commandline(int argc, char **argv, struct configuration_str
 	int opt;
 
 	char *progname = strrchr(argv[0], '/');
-	if (*progname && *(progname + 1)) {
+	if (progname != NULL && *progname && *(progname + 1)) {
 		progname++;
 	} else {
 		progname = "check_interfaces";

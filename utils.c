@@ -6,6 +6,10 @@
 #include <string.h>
 #include <time.h>
 
+#ifdef HAVE_POW
+#	include <math.h>
+#endif
+
 /*
  * Add a string
  */

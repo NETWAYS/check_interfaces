@@ -7,10 +7,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#ifdef HAVE_POW
-#	include <math.h>
-#endif
-
 struct stringStruct {
 	size_t max;
 	size_t len;

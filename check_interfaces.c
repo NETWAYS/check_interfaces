@@ -15,30 +15,35 @@
  * text strings to output in the perfdata
  */
 
-static char *if_vars_default[] = {"inOctets", "outOctets", "inDiscards", "outDiscards", "inErrors", "outErrors",
-						   "inUcast",  "outUcast",  "speed",      "inBitps",     "outBitps"};
+static char *if_vars_default[] = {"inOctets", "outOctets", "inDiscards", "outDiscards",
+								  "inErrors", "outErrors", "inUcast",    "outUcast",
+								  "speed",    "inBitps",   "outBitps"};
 
-static char *if_vars_cisco[] = {"inOctets", "outOctets", "inDiscards", "outDiscards", "inCRCs",  "outCollisions",
-						 "inUcast",  "outUcast",  "speed",      "inBitps",     "outBitps"};
+static char *if_vars_cisco[] = {"inOctets", "outOctets",     "inDiscards", "outDiscards",
+								"inCRCs",   "outCollisions", "inUcast",    "outUcast",
+								"speed",    "inBitps",       "outBitps"};
 
 /*
  * OIDs, hardcoded to remove the dependency on MIBs
  */
-static char *oid_if_bulkget[] = {".1.3.6.1.2.1.1.3", ".1.3.6.1.2.1.2.1", ".1.3.6.1.2.1.2.2.1.2", 0}; /* "uptime", "ifNumber", "ifDescr" */
+static char *oid_if_bulkget[] = {".1.3.6.1.2.1.1.3", ".1.3.6.1.2.1.2.1", ".1.3.6.1.2.1.2.2.1.2",
+								 0}; /* "uptime", "ifNumber", "ifDescr" */
 
-static char *oid_if_get[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0", ".1.3.6.1.2.1.2.2.1.2.1", 0}; /* "uptime", "ifNumber", "ifDescr" */
+static char *oid_if_get[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0", ".1.3.6.1.2.1.2.2.1.2.1",
+							 0}; /* "uptime", "ifNumber", "ifDescr" */
 
-static char *oid_if_bintec[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0", ".1.3.6.1.2.1.2.2.1.2.0", 0}; /* "uptime", "ifNumber", "ifDescr" */
+static char *oid_if_bintec[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0",
+								".1.3.6.1.2.1.2.2.1.2.0", 0}; /* "uptime", "ifNumber", "ifDescr" */
 
 static char *oid_extended[] = {".1.3.6.1.2.1.31.1.1.1.6",  /* ifHCInOctets */
-						".1.3.6.1.2.1.31.1.1.1.10", /* ifHCOutOctets */
-						".1.3.6.1.2.1.2.2.1.11",    /* ifInUcastPkts */
-						".1.3.6.1.2.1.2.2.1.17",    /* ifOutUcastPkts */
-						".1.3.6.1.2.1.2.2.1.5",     /* ifSpeed */
-						".1.3.6.1.2.1.31.1.1.1.15", /* ifHighSpeed */
-						".1.3.6.1.2.1.31.1.1.1.18", /* alias */
-						".1.3.6.1.2.1.31.1.1.1.1",  /* name */
-						0};
+							   ".1.3.6.1.2.1.31.1.1.1.10", /* ifHCOutOctets */
+							   ".1.3.6.1.2.1.2.2.1.11",    /* ifInUcastPkts */
+							   ".1.3.6.1.2.1.2.2.1.17",    /* ifOutUcastPkts */
+							   ".1.3.6.1.2.1.2.2.1.5",     /* ifSpeed */
+							   ".1.3.6.1.2.1.31.1.1.1.15", /* ifHighSpeed */
+							   ".1.3.6.1.2.1.31.1.1.1.18", /* alias */
+							   ".1.3.6.1.2.1.31.1.1.1.1",  /* name */
+							   0};
 
 static char *oid_alias_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.18", 0};  /* "alias" */
 static char *oid_alias_get[] = {".1.3.6.1.2.1.31.1.1.1.18.1", 0};    /* "alias" */
@@ -47,27 +52,27 @@ static char *oid_names_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.1", 0};   /* "name" *
 static char *oid_names_get[] = {".1.3.6.1.2.1.31.1.1.1.1.1", 0};     /* "name" */
 static char *oid_names_bintec[] = {".1.3.6.1.2.1.31.1.1.1.1.0", 0};  /* "name - NOT TESTED!" */
 static char *oid_extended_cisco[] = {".1.3.6.1.4.1.9.5.1.4.1.1.23",  /* portAdditionalOperStatus */
-							  0};
+									 0};
 
 static char *oid_vals_default[] = {".1.3.6.1.2.1.2.2.1.7",  /* ifAdminStatus */
-							".1.3.6.1.2.1.2.2.1.8",  /* ifOperStatus */
-							".1.3.6.1.2.1.2.2.1.10", /* ifInOctets */
-							".1.3.6.1.2.1.2.2.1.13", /* ifInDiscards */
-							".1.3.6.1.2.1.2.2.1.14", /* ifInErrors */
-							".1.3.6.1.2.1.2.2.1.16", /* ifOutOctets */
-							".1.3.6.1.2.1.2.2.1.19", /* ifOutDiscards */
-							".1.3.6.1.2.1.2.2.1.20", /* ifOutErrors */
-							0};
+								   ".1.3.6.1.2.1.2.2.1.8",  /* ifOperStatus */
+								   ".1.3.6.1.2.1.2.2.1.10", /* ifInOctets */
+								   ".1.3.6.1.2.1.2.2.1.13", /* ifInDiscards */
+								   ".1.3.6.1.2.1.2.2.1.14", /* ifInErrors */
+								   ".1.3.6.1.2.1.2.2.1.16", /* ifOutOctets */
+								   ".1.3.6.1.2.1.2.2.1.19", /* ifOutDiscards */
+								   ".1.3.6.1.2.1.2.2.1.20", /* ifOutErrors */
+								   0};
 
 static char *oid_vals_cisco[] = {".1.3.6.1.2.1.2.2.1.7",      /* ifAdminStatus */
-						  ".1.3.6.1.2.1.2.2.1.8",      /* ifOperStatus */
-						  ".1.3.6.1.2.1.2.2.1.10",     /* ifInOctets */
-						  ".1.3.6.1.2.1.2.2.1.13",     /* ifInDiscards */
-						  ".1.3.6.1.4.1.9.2.2.1.1.12", /* locIfInCRC */
-						  ".1.3.6.1.2.1.2.2.1.16",     /* ifOutOctets */
-						  ".1.3.6.1.2.1.2.2.1.19",     /* ifOutDiscards */
-						  ".1.3.6.1.4.1.9.2.2.1.1.25", /* locIfCollisions */
-						  0};
+								 ".1.3.6.1.2.1.2.2.1.8",      /* ifOperStatus */
+								 ".1.3.6.1.2.1.2.2.1.10",     /* ifInOctets */
+								 ".1.3.6.1.2.1.2.2.1.13",     /* ifInDiscards */
+								 ".1.3.6.1.4.1.9.2.2.1.1.12", /* locIfInCRC */
+								 ".1.3.6.1.2.1.2.2.1.16",     /* ifOutOctets */
+								 ".1.3.6.1.2.1.2.2.1.19",     /* ifOutDiscards */
+								 ".1.3.6.1.4.1.9.2.2.1.1.25", /* locIfCollisions */
+								 0};
 
 #define DEFAULT_COMMUNITY "public"
 
@@ -91,13 +96,17 @@ typedef enum returncode returncode_t;
 
 // Forward declarations
 static void parse_and_check_commandline(int argc, char **argv, struct configuration_struct *config);
-static bool fetch_interface_aliases(struct configuration_struct * /*config*/, char ** /*oid_aliasp*/, netsnmp_session *snmp_session,
-							 netsnmp_session *session, struct ifStruct *interfaces, int ifNumber);
-static bool fetch_interface_names(struct configuration_struct * /*config*/, char **oid_namesp, netsnmp_session *snmp_session,
-						   netsnmp_session *session, struct ifStruct *interfaces, int ifNumber);
-static returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata, long double starttime,
-						  struct ifStruct *interfaces, String *out, char **if_vars, unsigned int number_of_matched_interfaces,
-						  struct timeval *time_value, int uptime, int ifNumber);
+static bool fetch_interface_aliases(struct configuration_struct * /*config*/,
+									char ** /*oid_aliasp*/, netsnmp_session *snmp_session,
+									netsnmp_session *session, struct ifStruct *interfaces,
+									int ifNumber);
+static bool fetch_interface_names(struct configuration_struct * /*config*/, char **oid_namesp,
+								  netsnmp_session *snmp_session, netsnmp_session *session,
+								  struct ifStruct *interfaces, int ifNumber);
+static returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata,
+								 long double starttime, struct ifStruct *interfaces, String *out,
+								 char **if_vars, unsigned int number_of_matched_interfaces,
+								 struct timeval *time_value, int uptime, int ifNumber);
 static void print_version(void);
 
 int main(int argc, char *argv[]) {
@@ -137,7 +146,8 @@ int main(int argc, char *argv[]) {
 	struct timeval time_value;
 	struct timezone time_zone;
 	gettimeofday(&time_value, &time_zone);
-	long double starttime = (long double)time_value.tv_sec + (((long double)time_value.tv_usec) / 1000000);
+	long double starttime =
+		(long double)time_value.tv_sec + (((long double)time_value.tv_usec) / 1000000);
 
 	// +1 for the `:` between hostname and port
 	size_t peername_max_len = strlen(config.hostname) + strlen(config.port) + 1;
@@ -158,10 +168,12 @@ int main(int argc, char *argv[]) {
 	netsnmp_session *snmp_session;
 	if (config.user) {
 		/* use snmpv3 */
-		snmp_session = start_session_v3(&session, config.user, config.auth_proto, config.auth_pass, config.priv_proto, config.priv_pass,
-										peername, config.global_timeout, config.session_retries);
+		snmp_session = start_session_v3(&session, config.user, config.auth_proto, config.auth_pass,
+										config.priv_proto, config.priv_pass, peername,
+										config.global_timeout, config.session_retries);
 	} else {
-		snmp_session = start_session(&session, config.community, peername, config.mode, config.global_timeout, config.session_retries);
+		snmp_session = start_session(&session, config.community, peername, config.mode,
+									 config.global_timeout, config.session_retries);
 	}
 #ifdef DEBUG
 	benchmark_end();
@@ -288,7 +300,8 @@ int main(int argc, char *argv[]) {
 
 				// get the real list length we need
 				int real_count = 0;
-				for (netsnmp_variable_list *runner = response->variables; runner; runner = runner->next_variable) {
+				for (netsnmp_variable_list *runner = response->variables; runner;
+					 runner = runner->next_variable) {
 					if (vars->type == ASN_OCTET_STR) {
 						real_count++;
 					}
@@ -320,7 +333,8 @@ int main(int argc, char *argv[]) {
 				memcpy(lastOid.name, vars->name, (vars->name_length * sizeof(oid)));
 				lastOid.name_len = vars->name_length;
 
-				if ((vars->name_length < OIDp[2].name_len) || (memcmp(OIDp[2].name, vars->name, (vars->name_length - 1) * sizeof(oid)))) {
+				if ((vars->name_length < OIDp[2].name_len) ||
+					(memcmp(OIDp[2].name, vars->name, (vars->name_length - 1) * sizeof(oid)))) {
 #ifdef DEBUG
 					fprintf(stderr, "reached end of interfaces\n");
 #endif
@@ -335,7 +349,8 @@ int main(int argc, char *argv[]) {
 					if (config.trimdescr && config.trimdescr < vars->val_len) {
 						interfaces[count].index = vars->name[(vars->name_length - 1)];
 
-						MEMCPY(interfaces[count].descr, (vars->val.string) + config.trimdescr, vars->val_len - config.trimdescr);
+						MEMCPY(interfaces[count].descr, (vars->val.string) + config.trimdescr,
+							   vars->val_len - config.trimdescr);
 
 						TERMSTR(interfaces[count].descr, vars->val_len - config.trimdescr);
 					} else {
@@ -351,7 +366,8 @@ int main(int argc, char *argv[]) {
 			if (count < ifNumber) {
 				if (lastifflag) {
 #ifdef DEBUG
-					fprintf(stderr, "Device says it has %d but really has %d interfaces\n", ifNumber, count);
+					fprintf(stderr, "Device says it has %d but really has %d interfaces\n",
+							ifNumber, count);
 #endif
 					ifNumber = count;
 				} else {
@@ -363,7 +379,8 @@ int main(int argc, char *argv[]) {
 				lastifflag = true;
 				if (count > ifNumber) {
 #ifdef DEBUG
-					fprintf(stderr, "Device says it has %d but really has %d interfaces\n", ifNumber, count);
+					fprintf(stderr, "Device says it has %d but really has %d interfaces\n",
+							ifNumber, count);
 #endif
 					ifNumber = count;
 				}
@@ -442,26 +459,33 @@ int main(int argc, char *argv[]) {
 			int status = 0;
 			if (config.get_names_flag) {
 				status = !regexec(&config.re, interfaces[i].name, (size_t)0, NULL, 0) ||
-						 (config.match_aliases_flag && !(regexec(&config.re, interfaces[i].alias, (size_t)0, NULL, 0)));
+						 (config.match_aliases_flag &&
+						  !(regexec(&config.re, interfaces[i].alias, (size_t)0, NULL, 0)));
 			} else {
 				status = !regexec(&config.re, interfaces[i].descr, (size_t)0, NULL, 0) ||
-						 (config.match_aliases_flag && !(regexec(&config.re, interfaces[i].alias, (size_t)0, NULL, 0)));
+						 (config.match_aliases_flag &&
+						  !(regexec(&config.re, interfaces[i].alias, (size_t)0, NULL, 0)));
 			}
 
 			int status2 = 0;
 			if (status && config.exclude_list) {
 				if (config.get_names_flag) {
-					status2 = !regexec(&config.exclude_re, interfaces[i].name, (size_t)0, NULL, 0) ||
-							  (config.match_aliases_flag && !(regexec(&config.re, interfaces[i].alias, (size_t)0, NULL, 0)));
+					status2 =
+						!regexec(&config.exclude_re, interfaces[i].name, (size_t)0, NULL, 0) ||
+						(config.match_aliases_flag &&
+						 !(regexec(&config.re, interfaces[i].alias, (size_t)0, NULL, 0)));
 				} else {
-					status2 = !regexec(&config.exclude_re, interfaces[i].descr, (size_t)0, NULL, 0) ||
-							  (config.match_aliases_flag && !(regexec(&config.exclude_re, interfaces[i].alias, (size_t)0, NULL, 0)));
+					status2 =
+						!regexec(&config.exclude_re, interfaces[i].descr, (size_t)0, NULL, 0) ||
+						(config.match_aliases_flag &&
+						 !(regexec(&config.exclude_re, interfaces[i].alias, (size_t)0, NULL, 0)));
 				}
 			}
 			if (status && !status2) {
 				count++;
 #ifdef DEBUG
-				fprintf(stderr, "Interface %d (%s) matched\n", interfaces[i].index, interfaces[i].descr);
+				fprintf(stderr, "Interface %d (%s) matched\n", interfaces[i].index,
+						interfaces[i].descr);
 #endif
 			} else {
 				interfaces[i].ignore = 1;
@@ -494,8 +518,10 @@ int main(int argc, char *argv[]) {
 
 		if (!interfaces[j].ignore) {
 			/* fetch the standard values first */
-			if (create_request(snmp_session, &OIDp, oid_vals, interfaces[j].index, &response, config.sleep_usecs)) {
-				for (netsnmp_variable_list *vars = response->variables; vars; vars = vars->next_variable) {
+			if (create_request(snmp_session, &OIDp, oid_vals, interfaces[j].index, &response,
+							   config.sleep_usecs)) {
+				for (netsnmp_variable_list *vars = response->variables; vars;
+					 vars = vars->next_variable) {
 					k = -1;
 					/* compare the received value to the requested value */
 					for (int i = 0; oid_vals[i]; i++) {
@@ -521,7 +547,10 @@ int main(int argc, char *argv[]) {
 							 * dormant(assume OK)
 							 */
 							interfaces[j].status =
-								(*(vars->val.integer) == 1 || *(vars->val.integer) == 5 || *(vars->val.integer) == 3) ? 1 : 0;
+								(*(vars->val.integer) == 1 || *(vars->val.integer) == 5 ||
+								 *(vars->val.integer) == 3)
+									? 1
+									: 0;
 						}
 						break;
 					case 2: /* ifInOctets */
@@ -563,8 +592,10 @@ int main(int argc, char *argv[]) {
 			}
 
 			/* now fetch the extended oids (64 bit counters etc.) */
-			if (create_request(snmp_session, &OIDp, oid_extended, interfaces[j].index, &response, config.sleep_usecs)) {
-				for (netsnmp_variable_list *vars = response->variables; vars; vars = vars->next_variable) {
+			if (create_request(snmp_session, &OIDp, oid_extended, interfaces[j].index, &response,
+							   config.sleep_usecs)) {
+				for (netsnmp_variable_list *vars = response->variables; vars;
+					 vars = vars->next_variable) {
 					k = -1;
 					/* compare the received value to the requested value */
 					for (int i = 0; oid_extended[i]; i++) {
@@ -605,7 +636,8 @@ int main(int argc, char *argv[]) {
 					case 5: /* ifHighSpeed */
 						if (vars->type == ASN_GAUGE) {
 							/* convert to bits / sec */
-							interfaces[j].speed = ((unsigned long long)*(vars->val.integer)) * 1000000ULL;
+							interfaces[j].speed =
+								((unsigned long long)*(vars->val.integer)) * 1000000ULL;
 						}
 						break;
 					case 6: /* alias */
@@ -628,8 +660,10 @@ int main(int argc, char *argv[]) {
 
 			/* now fetch the Cisco-specific extended oids */
 			if (config.mode == CISCO &&
-				create_request(snmp_session, &OIDp, oid_extended_cisco, interfaces[j].index, &response, config.sleep_usecs)) {
-				for (netsnmp_variable_list *vars = response->variables; vars; vars = vars->next_variable) {
+				create_request(snmp_session, &OIDp, oid_extended_cisco, interfaces[j].index,
+							   &response, config.sleep_usecs)) {
+				for (netsnmp_variable_list *vars = response->variables; vars;
+					 vars = vars->next_variable) {
 					k = -1;
 					/* compare the received value to the requested value */
 					for (int i = 0; oid_extended_cisco[i]; i++) {
@@ -643,7 +677,8 @@ int main(int argc, char *argv[]) {
 					{
 					case 0: /* portAdditionalOperStatus */
 						if (vars->type == ASN_OCTET_STR) {
-							interfaces[j].err_disable = !!(vars->val.string[1] & (unsigned char)32U);
+							interfaces[j].err_disable =
+								!!(vars->val.string[1] & (unsigned char)32U);
 						}
 						break;
 					}
@@ -660,7 +695,8 @@ int main(int argc, char *argv[]) {
 	 * ignored)
 	 */
 	if (ignore_count) {
-		addstr(&out, " - %d %s administratively down", ignore_count, ignore_count != 1 ? "are" : "is");
+		addstr(&out, " - %d %s administratively down", ignore_count,
+			   ignore_count != 1 ? "are" : "is");
 	}
 
 	if (OIDp) {
@@ -672,7 +708,8 @@ int main(int argc, char *argv[]) {
 
 	gettimeofday(&time_value, &time_zone);
 
-	returncode_t exit_code = print_output(&config, oldperfdata, starttime, interfaces, &out, if_vars, count, &time_value, uptime, ifNumber);
+	returncode_t exit_code = print_output(&config, oldperfdata, starttime, interfaces, &out,
+										  if_vars, count, &time_value, uptime, ifNumber);
 
 #ifdef DEBUG
 	benchmark_start("Close SNMP session");
@@ -687,14 +724,16 @@ int main(int argc, char *argv[]) {
 	exit(exit_code);
 }
 
-returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata, long double starttime,
-						  struct ifStruct *interfaces, String *out, char **if_vars, unsigned int number_of_matched_interfaces,
+returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata,
+						  long double starttime, struct ifStruct *interfaces, String *out,
+						  char **if_vars, unsigned int number_of_matched_interfaces,
 						  struct timeval *time_value, int uptime, int ifNumber) {
 
 	unsigned int parsed_lastcheck = 0;
 
 	if (config->oldperfdatap && config->oldperfdatap[0]) {
-		parse_perfdata(config->oldperfdatap, oldperfdata, config->prefix, &parsed_lastcheck, ifNumber, if_vars);
+		parse_perfdata(config->oldperfdatap, oldperfdata, config->prefix, &parsed_lastcheck,
+					   ifNumber, if_vars);
 	}
 
 	if (config->lastcheck) {
@@ -728,9 +767,12 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 		if (!interfaces[i].ignore) {
 			int warn = 0;
 
-			char *nameOrDescr = config->get_names_flag && strlen(interfaces[i].name) ? interfaces[i].name : interfaces[i].descr;
+			char *nameOrDescr = config->get_names_flag && strlen(interfaces[i].name)
+									? interfaces[i].name
+									: interfaces[i].descr;
 
-			if ((!interfaces[i].status || interfaces[i].err_disable) && !interfaces[i].ignore && !interfaces[i].admin_down) {
+			if ((!interfaces[i].status || interfaces[i].err_disable) && !interfaces[i].ignore &&
+				!interfaces[i].admin_down) {
 				if (config->crit_on_down_flag) {
 					addstr(&perf, "[CRITICAL] ");
 					errorflag = true;
@@ -769,7 +811,10 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 					}
 				}
 			} else if (interfaces[i].admin_down && config->print_all_flag) {
-				addstr(&perf, "[OK] %s", (config->get_names_flag && strlen(interfaces[i].name)) ? interfaces[i].name : interfaces[i].descr);
+				addstr(&perf, "[OK] %s",
+					   (config->get_names_flag && strlen(interfaces[i].name))
+						   ? interfaces[i].name
+						   : interfaces[i].descr);
 				if (config->get_aliases_flag && strlen(interfaces[i].alias)) {
 					addstr(&perf, " (%s) is down (administrative down)", interfaces[i].alias);
 				} else {
@@ -780,8 +825,10 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 			/* check if errors on the interface are increasing faster than our
 			   defined value */
 			else if ((oldperfdata[i].inErrors || oldperfdata[i].outErrors) &&
-					 (interfaces[i].inErrors > (oldperfdata[i].inErrors + (unsigned long)config->err_tolerance) ||
-					  interfaces[i].outErrors > (oldperfdata[i].outErrors + (unsigned long)config->coll_tolerance))) {
+					 (interfaces[i].inErrors >
+						  (oldperfdata[i].inErrors + (unsigned long)config->err_tolerance) ||
+					  interfaces[i].outErrors >
+						  (oldperfdata[i].outErrors + (unsigned long)config->coll_tolerance))) {
 				if (config->oldperfdatap && !interfaces[i].ignore) {
 					if (config->get_names_flag && strlen(interfaces[i].name)) {
 						addstr(&perf, "[WARNING] %s", interfaces[i].name);
@@ -800,19 +847,25 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 					if (config->mode != CISCO) {
 						addstr(&perf, " errors\n");
 					} else {
-						if (interfaces[i].inErrors > (oldperfdata[i].inErrors + (unsigned long)config->err_tolerance)) {
-							addstr(&perf, " %lu CRC errors since last check\n", interfaces[i].inErrors - oldperfdata[i].inErrors);
+						if (interfaces[i].inErrors >
+							(oldperfdata[i].inErrors + (unsigned long)config->err_tolerance)) {
+							addstr(&perf, " %lu CRC errors since last check\n",
+								   interfaces[i].inErrors - oldperfdata[i].inErrors);
 						}
-						if (interfaces[i].outErrors > (oldperfdata[i].outErrors + (unsigned long)config->coll_tolerance)) {
-							addstr(&perf, " %lu collisions since last check\n", interfaces[i].outErrors - oldperfdata[i].outErrors);
+						if (interfaces[i].outErrors >
+							(oldperfdata[i].outErrors + (unsigned long)config->coll_tolerance)) {
+							addstr(&perf, " %lu collisions since last check\n",
+								   interfaces[i].outErrors - oldperfdata[i].outErrors);
 						}
 					}
 					if (config->get_names_flag && strlen(interfaces[i].name)) {
 						addstr(out, ", %s has %lu errors", interfaces[i].name,
-							   (interfaces[i].inErrors + interfaces[i].outErrors - oldperfdata[i].inErrors - oldperfdata[i].outErrors));
+							   (interfaces[i].inErrors + interfaces[i].outErrors -
+								oldperfdata[i].inErrors - oldperfdata[i].outErrors));
 					} else {
 						addstr(out, ", %s has %lu errors", interfaces[i].descr,
-							   (interfaces[i].inErrors + interfaces[i].outErrors - oldperfdata[i].inErrors - oldperfdata[i].outErrors));
+							   (interfaces[i].inErrors + interfaces[i].outErrors -
+								oldperfdata[i].inErrors - oldperfdata[i].outErrors));
 					}
 					warnflag = true;
 					// warn++; /* if you uncomment this you will get 2 rows with
@@ -821,24 +874,33 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 				}
 			}
 
-			if (config->lastcheck && (interfaces[i].speed || config->speed) && !interfaces[i].admin_down &&
+			if (config->lastcheck && (interfaces[i].speed || config->speed) &&
+				!interfaces[i].admin_down &&
 				(oldperfdata[i].inOctets || oldperfdata[i].outOctets)) {
-				interfaces[i].inbitps = (subtract64(interfaces[i].inOctets, oldperfdata[i].inOctets, config->lastcheck, uptime) /
+				interfaces[i].inbitps = (subtract64(interfaces[i].inOctets, oldperfdata[i].inOctets,
+													config->lastcheck, uptime) /
 										 (unsigned long long)config->lastcheck) *
 										8ULL;
-				interfaces[i].outbitps = (subtract64(interfaces[i].outOctets, oldperfdata[i].outOctets, config->lastcheck, uptime) /
-										  (unsigned long long)config->lastcheck) *
-										 8ULL;
+				interfaces[i].outbitps =
+					(subtract64(interfaces[i].outOctets, oldperfdata[i].outOctets,
+								config->lastcheck, uptime) /
+					 (unsigned long long)config->lastcheck) *
+					8ULL;
 				if (config->speed) {
-					inload = (long double)interfaces[i].inbitps / ((long double)config->speed / 100L);
-					outload = (long double)interfaces[i].outbitps / ((long double)config->speed / 100L);
+					inload =
+						(long double)interfaces[i].inbitps / ((long double)config->speed / 100L);
+					outload =
+						(long double)interfaces[i].outbitps / ((long double)config->speed / 100L);
 				} else {
 					/* use the interface speed if a speed is not given */
-					inload = (long double)interfaces[i].inbitps / ((long double)interfaces[i].speed / 100L);
-					outload = (long double)interfaces[i].outbitps / ((long double)interfaces[i].speed / 100L);
+					inload = (long double)interfaces[i].inbitps /
+							 ((long double)interfaces[i].speed / 100L);
+					outload = (long double)interfaces[i].outbitps /
+							  ((long double)interfaces[i].speed / 100L);
 				}
 
-				if ((config->bandwith > 0) && ((int)inload > config->bandwith || (int)outload > config->bandwith)) {
+				if ((config->bandwith > 0) &&
+					((int)inload > config->bandwith || (int)outload > config->bandwith)) {
 					warn++;
 					warnflag = true;
 				}
@@ -860,7 +922,8 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 			}
 
 			if (config->lastcheck && (interfaces[i].speed || config->speed) &&
-				(interfaces[i].inbitps > 0ULL || interfaces[i].outbitps > 0ULL) && !interfaces[i].admin_down) {
+				(interfaces[i].inbitps > 0ULL || interfaces[i].outbitps > 0ULL) &&
+				!interfaces[i].admin_down) {
 				char *ins;
 				char *outs;
 				gauge_to_si(interfaces[i].inbitps, &ins);
@@ -891,25 +954,34 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 
 	/* now print performance data */
 
-	printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf checktime=%ld", (int)out->len, out->text, number_of_matched_interfaces,
-		   (((long double)time_value->tv_sec + ((long double)time_value->tv_usec / 1000000)) - starttime), time_value->tv_sec);
+	printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf checktime=%ld", (int)out->len,
+		   out->text, number_of_matched_interfaces,
+		   (((long double)time_value->tv_sec + ((long double)time_value->tv_usec / 1000000)) -
+			starttime),
+		   time_value->tv_sec);
 	if (uptime) {
 		printf(" %sdevice::check_snmp::uptime=%us", config->prefix ? config->prefix : "", uptime);
 	}
 
 	for (int i = 0; i < ifNumber; i++) {
 		if (!interfaces[i].ignore && (!interfaces[i].admin_down || config->print_all_flag)) {
-			printf(" %s%s::check_snmp::", config->prefix ? config->prefix : "", oldperfdata[i].descr);
-			printf("%s=%lluc %s=%lluc", if_vars[0], interfaces[i].inOctets, if_vars[1], interfaces[i].outOctets);
-			printf(" %s=%luc %s=%luc", if_vars[2], interfaces[i].inDiscards, if_vars[3], interfaces[i].outDiscards);
-			printf(" %s=%luc %s=%luc", if_vars[4], interfaces[i].inErrors, if_vars[5], interfaces[i].outErrors);
-			printf(" %s=%luc %s=%luc", if_vars[6], interfaces[i].inUcast, if_vars[7], interfaces[i].outUcast);
+			printf(" %s%s::check_snmp::", config->prefix ? config->prefix : "",
+				   oldperfdata[i].descr);
+			printf("%s=%lluc %s=%lluc", if_vars[0], interfaces[i].inOctets, if_vars[1],
+				   interfaces[i].outOctets);
+			printf(" %s=%luc %s=%luc", if_vars[2], interfaces[i].inDiscards, if_vars[3],
+				   interfaces[i].outDiscards);
+			printf(" %s=%luc %s=%luc", if_vars[4], interfaces[i].inErrors, if_vars[5],
+				   interfaces[i].outErrors);
+			printf(" %s=%luc %s=%luc", if_vars[6], interfaces[i].inUcast, if_vars[7],
+				   interfaces[i].outUcast);
 			if (config->speed) {
 				printf(" %s=%llu", if_vars[8], config->speed);
 			} else {
 				printf(" %s=%llu", if_vars[8], interfaces[i].speed);
 			}
-			printf(" %s=%llub %s=%llub", if_vars[9], interfaces[i].inbitps, if_vars[10], interfaces[i].outbitps);
+			printf(" %s=%llub %s=%llub", if_vars[9], interfaces[i].inbitps, if_vars[10],
+				   interfaces[i].outbitps);
 		}
 	}
 	printf("\n%*s", (int)perf.len, perf.text);
@@ -923,8 +995,9 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 	return OK;
 }
 
-bool fetch_interface_aliases(struct configuration_struct *config, char **oid_aliasp, netsnmp_session *snmp_session,
-							 netsnmp_session *session, struct ifStruct *interfaces, int ifNumber) {
+bool fetch_interface_aliases(struct configuration_struct *config, char **oid_aliasp,
+							 netsnmp_session *snmp_session, netsnmp_session *session,
+							 struct ifStruct *interfaces, int ifNumber) {
 	bool lastifflag = false;
 	int count = 0;
 	netsnmp_pdu *pdu;
@@ -984,7 +1057,8 @@ bool fetch_interface_aliases(struct configuration_struct *config, char **oid_ali
 				memcpy(lastOid.name, vars->name, (vars->name_length * sizeof(oid)));
 				lastOid.name_len = vars->name_length;
 
-				if ((vars->name_length < OIDp[0].name_len) || (memcmp(OIDp[0].name, vars->name, (vars->name_length - 1) * sizeof(oid)))) {
+				if ((vars->name_length < OIDp[0].name_len) ||
+					(memcmp(OIDp[0].name, vars->name, (vars->name_length - 1) * sizeof(oid)))) {
 #ifdef DEBUG
 					fprintf(stderr, "reached end of aliases\n");
 #endif
@@ -1047,7 +1121,8 @@ bool fetch_interface_aliases(struct configuration_struct *config, char **oid_ali
 	return true;
 }
 
-bool fetch_interface_names(struct configuration_struct *config, char **oid_namesp, netsnmp_session *snmp_session, netsnmp_session *session,
+bool fetch_interface_names(struct configuration_struct *config, char **oid_namesp,
+						   netsnmp_session *snmp_session, netsnmp_session *session,
 						   struct ifStruct *interfaces, int ifNumber) {
 	bool lastifflag = false;
 	netsnmp_pdu *pdu;
@@ -1108,7 +1183,8 @@ bool fetch_interface_names(struct configuration_struct *config, char **oid_names
 				memcpy(lastOid.name, vars->name, (vars->name_length * sizeof(oid)));
 				lastOid.name_len = vars->name_length;
 
-				if ((vars->name_length < OIDp[0].name_len) || (memcmp(OIDp[0].name, vars->name, (vars->name_length - 1) * sizeof(oid)))) {
+				if ((vars->name_length < OIDp[0].name_len) ||
+					(memcmp(OIDp[0].name, vars->name, (vars->name_length - 1) * sizeof(oid)))) {
 #ifdef DEBUG
 					fprintf(stderr, "reached end of names\n");
 #endif
@@ -1131,7 +1207,8 @@ bool fetch_interface_names(struct configuration_struct *config, char **oid_names
 			if (count < ifNumber) {
 #ifdef DEBUG
 				if (lastifflag) {
-					fprintf(stderr, "Device has %d interfaces but only has %d names\n", ifNumber, count);
+					fprintf(stderr, "Device has %d interfaces but only has %d names\n", ifNumber,
+							count);
 				} else {
 					fprintf(stderr, "Sending another packet for names\n");
 				}
@@ -1215,7 +1292,8 @@ void parse_and_check_commandline(int argc, char **argv, struct configuration_str
 									   {"version", no_argument, NULL, VERSION_OPTION},
 									   {NULL, 0, NULL, 0}};
 
-	while ((opt = getopt_long(argc, argv, "aAb:c:dDe:f:h:j:J:k:K:m:Np:P:r:R:s:t:u:x:?", longopts, NULL)) != -1) {
+	while ((opt = getopt_long(argc, argv, "aAb:c:dDe:f:h:j:J:k:K:m:Np:P:r:R:s:t:u:x:?", longopts,
+							  NULL)) != -1) {
 		switch (opt) {
 		case 'a':
 			config->get_aliases_flag = true;
@@ -1362,7 +1440,8 @@ void parse_and_check_commandline(int argc, char **argv, struct configuration_str
 		}
 
 		if (config->exclude_list) {
-			status = regcomp(&config->exclude_re, config->exclude_list, REG_ICASE | REG_EXTENDED | REG_NOSUB);
+			status = regcomp(&config->exclude_re, config->exclude_list,
+							 REG_ICASE | REG_EXTENDED | REG_NOSUB);
 			if (status != 0) {
 				printf("Error creating exclusion regex\n");
 				exit(3);

@@ -60,12 +60,13 @@ int addstr(String *str, const char *format, ...) {
  * - only use for strings we already know the size of */
 
 void strcpy_nospaces(char *dest, char *src) {
-	static unsigned char allowed[256] = "_________________________________!_#_%__()*+,-.-0123456789_____?@"
-										"ABCDEFGHIJKLMNOPQRSTUVWXYZ[_]^__abcdefghijklmnopqrstuvwxyz{_}_________"
-										"__"
-										"______________________________________________________________________"
-										"__"
-										"_______________________________________________";
+	static unsigned char allowed[256] =
+		"_________________________________!_#_%__()*+,-.-0123456789_____?@"
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ[_]^__abcdefghijklmnopqrstuvwxyz{_}_________"
+		"__"
+		"______________________________________________________________________"
+		"__"
+		"_______________________________________________";
 
 	while (*src) {
 		*(dest++) = allowed[(unsigned char)*(src++)];
@@ -130,8 +131,10 @@ void benchmark_end(void) {
 		struct timespec benchmark_end_time;
 		clock_gettime(CLOCK_MONOTONIC, &benchmark_end_time);
 		fprintf(stderr, "[Finished benchmark after %f ms] %s\n",
-				((double)benchmark_end_time.tv_sec * 1000.0 + (double)benchmark_end_time.tv_nsec / 1000000.0) -
-					((double)benchmark_start_time.tv_sec * 1000.0 + (double)benchmark_start_time.tv_nsec / 1000000.0),
+				((double)benchmark_end_time.tv_sec * 1000.0 +
+				 (double)benchmark_end_time.tv_nsec / 1000000.0) -
+					((double)benchmark_start_time.tv_sec * 1000.0 +
+					 (double)benchmark_start_time.tv_nsec / 1000000.0),
 				benchmark_task);
 	}
 	free(benchmark_task);

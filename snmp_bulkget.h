@@ -118,13 +118,17 @@ size_t sizeof_oid_if_bulkget(void);
 
 void print64(struct counter64 *, const unsigned long *);
 unsigned long long convertto64(struct counter64 *, const unsigned long *);
-unsigned long long subtract64(unsigned long long, unsigned long long, unsigned int lastcheck, int uptime);
-netsnmp_session *start_session(netsnmp_session *, char *, char *, enum mode_enum, unsigned long global_timeout, int session_retries);
-netsnmp_session *start_session_v3(netsnmp_session *, char *, char *, char *, char *, char *, char *, unsigned long global_timeout,
-								  int session_retries);
+unsigned long long subtract64(unsigned long long, unsigned long long, unsigned int lastcheck,
+							  int uptime);
+netsnmp_session *start_session(netsnmp_session *, char *, char *, enum mode_enum,
+							   unsigned long global_timeout, int session_retries);
+netsnmp_session *start_session_v3(netsnmp_session *, char *, char *, char *, char *, char *, char *,
+								  unsigned long global_timeout, int session_retries);
 int usage(char *);
 int parse_perfdata(char *, struct ifStruct *, char *, unsigned int *, int ifNumber, char *[]);
-void set_value(struct ifStruct *, char *, char *, unsigned long long, int ifNumber, char *if_vars[]);
+void set_value(struct ifStruct *, char *, char *, unsigned long long, int ifNumber,
+			   char *if_vars[]);
 int parseoids(int, char *, struct OIDStruct *);
-int create_request(netsnmp_session *, struct OIDStruct **, char **, int, netsnmp_pdu **, unsigned int sleep_usecs);
+int create_request(netsnmp_session *, struct OIDStruct **, char **, int, netsnmp_pdu **,
+				   unsigned int sleep_usecs);
 void create_pdu(int, char **, netsnmp_pdu **, struct OIDStruct **, int, long);

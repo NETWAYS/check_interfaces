@@ -15,22 +15,22 @@
  * text strings to output in the perfdata
  */
 
-char *if_vars_default[] = {"inOctets", "outOctets", "inDiscards", "outDiscards", "inErrors", "outErrors",
+static char *if_vars_default[] = {"inOctets", "outOctets", "inDiscards", "outDiscards", "inErrors", "outErrors",
 						   "inUcast",  "outUcast",  "speed",      "inBitps",     "outBitps"};
 
-char *if_vars_cisco[] = {"inOctets", "outOctets", "inDiscards", "outDiscards", "inCRCs",  "outCollisions",
+static char *if_vars_cisco[] = {"inOctets", "outOctets", "inDiscards", "outDiscards", "inCRCs",  "outCollisions",
 						 "inUcast",  "outUcast",  "speed",      "inBitps",     "outBitps"};
 
 /*
  * OIDs, hardcoded to remove the dependency on MIBs
  */
-char *oid_if_bulkget[] = {".1.3.6.1.2.1.1.3", ".1.3.6.1.2.1.2.1", ".1.3.6.1.2.1.2.2.1.2", 0}; /* "uptime", "ifNumber", "ifDescr" */
+static char *oid_if_bulkget[] = {".1.3.6.1.2.1.1.3", ".1.3.6.1.2.1.2.1", ".1.3.6.1.2.1.2.2.1.2", 0}; /* "uptime", "ifNumber", "ifDescr" */
 
-char *oid_if_get[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0", ".1.3.6.1.2.1.2.2.1.2.1", 0}; /* "uptime", "ifNumber", "ifDescr" */
+static char *oid_if_get[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0", ".1.3.6.1.2.1.2.2.1.2.1", 0}; /* "uptime", "ifNumber", "ifDescr" */
 
-char *oid_if_bintec[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0", ".1.3.6.1.2.1.2.2.1.2.0", 0}; /* "uptime", "ifNumber", "ifDescr" */
+static char *oid_if_bintec[] = {".1.3.6.1.2.1.1.3.0", ".1.3.6.1.2.1.2.1.0", ".1.3.6.1.2.1.2.2.1.2.0", 0}; /* "uptime", "ifNumber", "ifDescr" */
 
-char *oid_extended[] = {".1.3.6.1.2.1.31.1.1.1.6",  /* ifHCInOctets */
+static char *oid_extended[] = {".1.3.6.1.2.1.31.1.1.1.6",  /* ifHCInOctets */
 						".1.3.6.1.2.1.31.1.1.1.10", /* ifHCOutOctets */
 						".1.3.6.1.2.1.2.2.1.11",    /* ifInUcastPkts */
 						".1.3.6.1.2.1.2.2.1.17",    /* ifOutUcastPkts */
@@ -40,18 +40,16 @@ char *oid_extended[] = {".1.3.6.1.2.1.31.1.1.1.6",  /* ifHCInOctets */
 						".1.3.6.1.2.1.31.1.1.1.1",  /* name */
 						0};
 
-char *oid_alias_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.18", 0};  /* "alias" */
-char *oid_alias_get[] = {".1.3.6.1.2.1.31.1.1.1.18.1", 0};    /* "alias" */
-char *oid_alias_bintec[] = {".1.3.6.1.2.1.31.1.1.1.18.0", 0}; /* "alias" */
-char *oid_names_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.1", 0};   /* "name" */
-
-char *oid_names_get[] = {".1.3.6.1.2.1.31.1.1.1.1.1", 0};    /* "name" */
-char *oid_names_bintec[] = {".1.3.6.1.2.1.31.1.1.1.1.0", 0}; /* "name - NOT TESTED!" */
-
-char *oid_extended_cisco[] = {".1.3.6.1.4.1.9.5.1.4.1.1.23", /* portAdditionalOperStatus */
+static char *oid_alias_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.18", 0};  /* "alias" */
+static char *oid_alias_get[] = {".1.3.6.1.2.1.31.1.1.1.18.1", 0};    /* "alias" */
+static char *oid_alias_bintec[] = {".1.3.6.1.2.1.31.1.1.1.18.0", 0}; /* "alias" */
+static char *oid_names_bulkget[] = {".1.3.6.1.2.1.31.1.1.1.1", 0};   /* "name" */
+static char *oid_names_get[] = {".1.3.6.1.2.1.31.1.1.1.1.1", 0};     /* "name" */
+static char *oid_names_bintec[] = {".1.3.6.1.2.1.31.1.1.1.1.0", 0};  /* "name - NOT TESTED!" */
+static char *oid_extended_cisco[] = {".1.3.6.1.4.1.9.5.1.4.1.1.23",  /* portAdditionalOperStatus */
 							  0};
 
-char *oid_vals_default[] = {".1.3.6.1.2.1.2.2.1.7",  /* ifAdminStatus */
+static char *oid_vals_default[] = {".1.3.6.1.2.1.2.2.1.7",  /* ifAdminStatus */
 							".1.3.6.1.2.1.2.2.1.8",  /* ifOperStatus */
 							".1.3.6.1.2.1.2.2.1.10", /* ifInOctets */
 							".1.3.6.1.2.1.2.2.1.13", /* ifInDiscards */
@@ -61,7 +59,7 @@ char *oid_vals_default[] = {".1.3.6.1.2.1.2.2.1.7",  /* ifAdminStatus */
 							".1.3.6.1.2.1.2.2.1.20", /* ifOutErrors */
 							0};
 
-char *oid_vals_cisco[] = {".1.3.6.1.2.1.2.2.1.7",      /* ifAdminStatus */
+static char *oid_vals_cisco[] = {".1.3.6.1.2.1.2.2.1.7",      /* ifAdminStatus */
 						  ".1.3.6.1.2.1.2.2.1.8",      /* ifOperStatus */
 						  ".1.3.6.1.2.1.2.2.1.10",     /* ifInOctets */
 						  ".1.3.6.1.2.1.2.2.1.13",     /* ifInDiscards */
@@ -76,7 +74,7 @@ char *oid_vals_cisco[] = {".1.3.6.1.2.1.2.2.1.7",      /* ifAdminStatus */
 /*
  * operating modes
  */
-const char *modes[] = {"default", "cisco", "nonbulk", "bintec", NULL};
+static const char *modes[] = {"default", "cisco", "nonbulk", "bintec", NULL};
 
 #ifdef DEBUG
 static char *implode_result;
@@ -92,34 +90,17 @@ enum returncode {
 typedef enum returncode returncode_t;
 
 // Forward declarations
-void parse_and_check_commandline(int argc, char **argv, struct configuration_struct *config);
-bool fetch_interface_aliases(struct configuration_struct * /*config*/, char ** /*oid_aliasp*/, netsnmp_session *snmp_session,
+static void parse_and_check_commandline(int argc, char **argv, struct configuration_struct *config);
+static bool fetch_interface_aliases(struct configuration_struct * /*config*/, char ** /*oid_aliasp*/, netsnmp_session *snmp_session,
 							 netsnmp_session *session, struct ifStruct *interfaces, int ifNumber);
-bool fetch_interface_names(struct configuration_struct * /*config*/, char **oid_namesp, netsnmp_session *snmp_session,
+static bool fetch_interface_names(struct configuration_struct * /*config*/, char **oid_namesp, netsnmp_session *snmp_session,
 						   netsnmp_session *session, struct ifStruct *interfaces, int ifNumber);
-returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata, long double starttime,
+static returncode_t print_output(struct configuration_struct *config, struct ifStruct *oldperfdata, long double starttime,
 						  struct ifStruct *interfaces, String *out, char **if_vars, unsigned int number_of_matched_interfaces,
 						  struct timeval *time_value, int uptime, int ifNumber);
-void print_version(void);
+static void print_version(void);
 
 int main(int argc, char *argv[]) {
-	netsnmp_session session;
-	netsnmp_session *snmp_session;
-	netsnmp_pdu *pdu;
-	netsnmp_pdu *response;
-
-	netsnmp_variable_list *vars;
-	int status;
-	int status2;
-	int count = 0; /* used for: the number of interfaces we receive, the number
-					  of regex matches */
-	size_t size;
-
-	/* uptime counter */
-	unsigned int uptime = 0;
-
-	int ifNumber = 0;
-
 	config_t config = {
 		.crit_on_down_flag = true,
 		.get_aliases_flag = false,
@@ -151,38 +132,12 @@ int main(int argc, char *argv[]) {
 		.mode = DEFAULT,
 	};
 
-	struct ifStruct *interfaces = NULL;  /* current interface data */
-	struct ifStruct *oldperfdata = NULL; /* previous check interface data */
-	struct OIDStruct *OIDp;
-
-	long double starttime;
-	int ignore_count = 0;
-
-	char outstr[MAX_STRING];
-	memset(outstr, 0, sizeof(outstr));
-	String out;
-	out.max = MAX_STRING;
-	out.len = 0;
-	out.text = outstr;
-
-	struct OIDStruct lastOid;
-
-	static char **oid_ifp;
-	static char **oid_vals;
-	static char **if_vars;
-	static char **oid_aliasp;
-	static char **oid_namesp;
-
-	oid_ifp = oid_if_bulkget;
-	oid_vals = oid_vals_default;
-	if_vars = if_vars_default;
-
 	parse_and_check_commandline(argc, argv, &config);
 
 	struct timeval time_value;
 	struct timezone time_zone;
 	gettimeofday(&time_value, &time_zone);
-	starttime = (long double)time_value.tv_sec + (((long double)time_value.tv_usec) / 1000000);
+	long double starttime = (long double)time_value.tv_sec + (((long double)time_value.tv_usec) / 1000000);
 
 	// +1 for the `:` between hostname and port
 	size_t peername_max_len = strlen(config.hostname) + strlen(config.port) + 1;
@@ -199,6 +154,8 @@ int main(int argc, char *argv[]) {
 #ifdef DEBUG
 	benchmark_start("Start SNMP session");
 #endif
+	netsnmp_session session;
+	netsnmp_session *snmp_session;
 	if (config.user) {
 		/* use snmpv3 */
 		snmp_session = start_session_v3(&session, config.user, config.auth_proto, config.auth_pass, config.priv_proto, config.priv_pass,
@@ -210,6 +167,10 @@ int main(int argc, char *argv[]) {
 	benchmark_end();
 #endif
 
+	size_t size = 0;
+	char **oid_aliasp;
+	char **oid_namesp;
+	char **oid_ifp = oid_if_bulkget;
 	if (config.mode == NONBULK) {
 		oid_ifp = oid_if_get;
 		size = (sizeof(oid_if_get) / sizeof(char *)) - 1;
@@ -228,8 +189,10 @@ int main(int argc, char *argv[]) {
 	}
 
 	/* allocate the space for the interface OIDs */
-	OIDp = (struct OIDStruct *)calloc(size, sizeof(struct OIDStruct));
+	struct OIDStruct *OIDp = (struct OIDStruct *)calloc(size, sizeof(struct OIDStruct));
 
+	char **oid_vals = oid_vals_default;
+	char **if_vars = if_vars_default;
 	if (config.mode == CISCO) {
 		if_vars = if_vars_cisco;
 		oid_vals = oid_vals_cisco;
@@ -243,8 +206,25 @@ int main(int argc, char *argv[]) {
 	 * is necessary to work around buggy switches that lie about the ifNumber
 	 */
 
-	for (bool lastifflag = false; lastifflag != true;) {
+	netsnmp_pdu *response;
+	netsnmp_pdu *pdu;
+	int count = 0; /* used for: the number of interfaces we receive, the number
+					  of regex matches */
+	/* uptime counter */
+	unsigned int uptime = 0;
+	int ifNumber = 0;
+	struct OIDStruct lastOid;
+	struct ifStruct *interfaces = NULL;  /* current interface data */
+	struct ifStruct *oldperfdata = NULL; /* previous check interface data */
+	char outstr[MAX_STRING];
+	memset(outstr, 0, sizeof(outstr));
+	String out = {
+		.max = MAX_STRING,
+		.len = 0,
+		.text = outstr,
+	};
 
+	for (bool lastifflag = false; lastifflag != true;) {
 		/* build our request depending on the mode */
 		if (count == 0) {
 			create_pdu(config.mode, oid_ifp, &pdu, &OIDp, 2, config.pdu_max_repetitions);
@@ -267,7 +247,7 @@ int main(int argc, char *argv[]) {
 		benchmark_start("Send SNMP request for OIDs: %s", implode_result);
 #endif
 		/* send the request */
-		status = snmp_synch_response(snmp_session, pdu, &response);
+		int status = snmp_synch_response(snmp_session, pdu, &response);
 #ifdef DEBUG
 		benchmark_end();
 		free(implode_result);
@@ -277,8 +257,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
-
-			vars = response->variables;
+			netsnmp_variable_list *vars = response->variables;
 
 			if (count == 0) {
 				/* assuming that the uptime and ifNumber come first */
@@ -460,6 +439,7 @@ int main(int argc, char *argv[]) {
 		for (int i = 0; i < ifNumber; i++) {
 			/* When --if-name is set ignore descr in favor of name, else use old
 			 * behaviour */
+			int status = 0;
 			if (config.get_names_flag) {
 				status = !regexec(&config.re, interfaces[i].name, (size_t)0, NULL, 0) ||
 						 (config.match_aliases_flag && !(regexec(&config.re, interfaces[i].alias, (size_t)0, NULL, 0)));
@@ -467,7 +447,8 @@ int main(int argc, char *argv[]) {
 				status = !regexec(&config.re, interfaces[i].descr, (size_t)0, NULL, 0) ||
 						 (config.match_aliases_flag && !(regexec(&config.re, interfaces[i].alias, (size_t)0, NULL, 0)));
 			}
-			status2 = 0;
+
+			int status2 = 0;
 			if (status && config.exclude_list) {
 				if (config.get_names_flag) {
 					status2 = !regexec(&config.exclude_re, interfaces[i].name, (size_t)0, NULL, 0) ||
@@ -506,15 +487,15 @@ int main(int argc, char *argv[]) {
 	 * N.B. if the interfaces are continuous we could try
 	 * a bulk get instead
 	 */
+	int ignore_count = 0;
 	for (int j = 0, k = 0; j < ifNumber; j++) {
 		/* add the interface to the oldperfdata list */
 		strcpy_nospaces(oldperfdata[j].descr, interfaces[j].descr);
 
 		if (!interfaces[j].ignore) {
-
 			/* fetch the standard values first */
 			if (create_request(snmp_session, &OIDp, oid_vals, interfaces[j].index, &response, config.sleep_usecs)) {
-				for (vars = response->variables; vars; vars = vars->next_variable) {
+				for (netsnmp_variable_list *vars = response->variables; vars; vars = vars->next_variable) {
 					k = -1;
 					/* compare the received value to the requested value */
 					for (int i = 0; oid_vals[i]; i++) {
@@ -583,7 +564,7 @@ int main(int argc, char *argv[]) {
 
 			/* now fetch the extended oids (64 bit counters etc.) */
 			if (create_request(snmp_session, &OIDp, oid_extended, interfaces[j].index, &response, config.sleep_usecs)) {
-				for (vars = response->variables; vars; vars = vars->next_variable) {
+				for (netsnmp_variable_list *vars = response->variables; vars; vars = vars->next_variable) {
 					k = -1;
 					/* compare the received value to the requested value */
 					for (int i = 0; oid_extended[i]; i++) {
@@ -624,7 +605,7 @@ int main(int argc, char *argv[]) {
 					case 5: /* ifHighSpeed */
 						if (vars->type == ASN_GAUGE) {
 							/* convert to bits / sec */
-							interfaces[j].speed = ((u64) * (vars->val.integer)) * 1000000ULL;
+							interfaces[j].speed = ((unsigned long long)*(vars->val.integer)) * 1000000ULL;
 						}
 						break;
 					case 6: /* alias */
@@ -648,7 +629,7 @@ int main(int argc, char *argv[]) {
 			/* now fetch the Cisco-specific extended oids */
 			if (config.mode == CISCO &&
 				create_request(snmp_session, &OIDp, oid_extended_cisco, interfaces[j].index, &response, config.sleep_usecs)) {
-				for (vars = response->variables; vars; vars = vars->next_variable) {
+				for (netsnmp_variable_list *vars = response->variables; vars; vars = vars->next_variable) {
 					k = -1;
 					/* compare the received value to the requested value */
 					for (int i = 0; oid_extended_cisco[i]; i++) {
@@ -842,12 +823,12 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 
 			if (config->lastcheck && (interfaces[i].speed || config->speed) && !interfaces[i].admin_down &&
 				(oldperfdata[i].inOctets || oldperfdata[i].outOctets)) {
-				interfaces[i].inbitps =
-					(subtract64(interfaces[i].inOctets, oldperfdata[i].inOctets, config->lastcheck, uptime) / (u64)config->lastcheck) *
-					8ULL;
-				interfaces[i].outbitps =
-					(subtract64(interfaces[i].outOctets, oldperfdata[i].outOctets, config->lastcheck, uptime) / (u64)config->lastcheck) *
-					8ULL;
+				interfaces[i].inbitps = (subtract64(interfaces[i].inOctets, oldperfdata[i].inOctets, config->lastcheck, uptime) /
+										 (unsigned long long)config->lastcheck) *
+										8ULL;
+				interfaces[i].outbitps = (subtract64(interfaces[i].outOctets, oldperfdata[i].outOctets, config->lastcheck, uptime) /
+										  (unsigned long long)config->lastcheck) *
+										 8ULL;
 				if (config->speed) {
 					inload = (long double)interfaces[i].inbitps / ((long double)config->speed / 100L);
 					outload = (long double)interfaces[i].outbitps / ((long double)config->speed / 100L);

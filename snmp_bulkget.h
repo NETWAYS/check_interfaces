@@ -32,11 +32,6 @@
 #define MEMCPY(a, b, c) memcpy(a, b, (sizeof(a) > c) ? c : sizeof(a))
 #define TERMSTR(a, b)   a[(((sizeof(a) - 1) < b) ? (sizeof(a) - 1) : b)] = '\0'
 
-#ifndef U64
-#	define U64
-typedef unsigned long long u64;
-#endif
-
 /*
  * structs
  */
@@ -51,17 +46,17 @@ struct ifStruct {
 	char descr[MAX_DESCR_LEN];
 	char alias[MAX_DESCR_LEN];
 	char name[MAX_DESCR_LEN];
-	u64 inOctets;
-	u64 outOctets;
+	unsigned long long inOctets;
+	unsigned long long outOctets;
 	unsigned long inDiscards;
 	unsigned long outDiscards;
 	unsigned long inErrors;
 	unsigned long outErrors;
 	unsigned long inUcast;
 	unsigned long outUcast;
-	u64 speed;
-	u64 inbitps;
-	u64 outbitps;
+	unsigned long long speed;
+	unsigned long long inbitps;
+	unsigned long long outbitps;
 };
 
 struct OIDStruct {
@@ -105,7 +100,7 @@ typedef struct configuration_struct {
 	char *iface_regex;
 	unsigned long global_timeout;
 	char *exclude_list;
-	u64 speed;
+	unsigned long long speed;
 	unsigned int lastcheck;
 	unsigned int sleep_usecs;
 	int session_retries;
@@ -122,14 +117,14 @@ size_t sizeof_oid_if_get(void);
 size_t sizeof_oid_if_bulkget(void);
 
 void print64(struct counter64 *, const unsigned long *);
-u64 convertto64(struct counter64 *, const unsigned long *);
-u64 subtract64(u64, u64, unsigned int lastcheck, int uptime);
+unsigned long long convertto64(struct counter64 *, const unsigned long *);
+unsigned long long subtract64(unsigned long long, unsigned long long, unsigned int lastcheck, int uptime);
 netsnmp_session *start_session(netsnmp_session *, char *, char *, enum mode_enum, unsigned long global_timeout, int session_retries);
 netsnmp_session *start_session_v3(netsnmp_session *, char *, char *, char *, char *, char *, char *, unsigned long global_timeout,
 								  int session_retries);
 int usage(char *);
 int parse_perfdata(char *, struct ifStruct *, char *, unsigned int *, int ifNumber, char *[]);
-void set_value(struct ifStruct *, char *, char *, u64, int ifNumber, char *if_vars[]);
+void set_value(struct ifStruct *, char *, char *, unsigned long long, int ifNumber, char *if_vars[]);
 int parseoids(int, char *, struct OIDStruct *);
 int create_request(netsnmp_session *, struct OIDStruct **, char **, int, netsnmp_pdu **, unsigned int sleep_usecs);
 void create_pdu(int, char **, netsnmp_pdu **, struct OIDStruct **, int, long);

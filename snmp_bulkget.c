@@ -90,6 +90,7 @@ void print64(struct counter64 *count64, const unsigned long *count32) {
 	if (!(isZeroU64(count64))) {
 		char buffer[I64CHARSZ + 1];
 		printU64(buffer, count64);
+
 #ifdef DEBUG
 		printf("64:%s", buffer);
 #else
@@ -104,23 +105,23 @@ void print64(struct counter64 *count64, const unsigned long *count32) {
 	}
 }
 
-u64 convertto64(struct counter64 *val64, const unsigned long *val32) {
-	u64 temp64;
+unsigned long long convertto64(struct counter64 *val64, const unsigned long *val32) {
+	unsigned long long temp64;
 
 	if ((isZeroU64(val64))) {
 		if (val32) {
-			temp64 = (u64)(*val32);
+			temp64 = (unsigned long long)(*val32);
 		} else {
 			temp64 = 0;
 		}
 	} else {
-		temp64 = ((u64)(val64->high) << 32) + val64->low;
+		temp64 = ((unsigned long long)(val64->high) << 32) + val64->low;
 	}
 
 	return (temp64);
 }
 
-u64 subtract64(u64 big64, u64 small64, unsigned int lastcheck, int uptime) {
+unsigned long long subtract64(unsigned long long big64, unsigned long long small64, unsigned int lastcheck, int uptime) {
 	if (big64 < small64) {
 		/* either the device was reset or the counter overflowed
 		 */
@@ -300,7 +301,7 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata, char *prefi
 	int plugins;
 	int uptime_old;
 #endif
-	u64 value = 0;
+	unsigned long long value = 0;
 	char *valstr;
 
 	/* first split at spaces */
@@ -370,10 +371,9 @@ int parse_perfdata(char *oldperfdatap, struct ifStruct *oldperfdata, char *prefi
 /*
  * fill the ifStruct with values
  */
-void set_value(struct ifStruct *oldperfdata, char *interface, char *var, u64 value, int ifNumber, char *if_vars[]) {
-	int i;
+void set_value(struct ifStruct *oldperfdata, char *interface, char *var, unsigned long long value, int ifNumber, char *if_vars[]) {
 
-	for (i = 0; i < ifNumber; i++) {
+	for (int i = 0; i < ifNumber; i++) {
 		if (strcmp(interface, oldperfdata[i].descr) == 0) {
 			if (strcmp(var, if_vars[0]) == 0) {
 				oldperfdata[i].inOctets = value;

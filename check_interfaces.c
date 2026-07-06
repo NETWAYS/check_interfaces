@@ -183,21 +183,16 @@ int main(int argc, char *argv[]) {
 	char **oid_aliasp;
 	char **oid_namesp;
 	char **oid_ifp = oid_if_bulkget;
-	if (config.mode == NONBULK) {
-		oid_ifp = oid_if_get;
-		size = (sizeof(oid_if_get) / sizeof(char *)) - 1;
-		oid_aliasp = oid_alias_get;
-		oid_namesp = oid_names_get;
-	} else if (config.mode == BINTEC) {
-		oid_ifp = oid_if_bintec;
-		size = (sizeof(oid_if_bintec) / sizeof(char *)) - 1;
-		oid_aliasp = oid_alias_bintec;
-		oid_namesp = oid_names_bintec;
+	if (config.mode == BINTEC) {
+        	oid_ifp = oid_if_bintec;
+	        size = (sizeof(oid_if_bintec) / sizeof(char *)) - 1;
+        	oid_aliasp = oid_alias_bintec;
+        	oid_namesp = oid_names_bintec;
 	} else {
-		oid_ifp = oid_if_bulkget;
-		size = (sizeof(oid_if_bulkget) / sizeof(char *)) - 1;
-		oid_aliasp = oid_alias_bulkget;
-		oid_namesp = oid_names_bulkget;
+        	oid_ifp = oid_if_bulkget;
+	        size = (sizeof(oid_if_bulkget) / sizeof(char *)) - 1;
+        	oid_aliasp = oid_alias_bulkget;
+	        oid_namesp = oid_names_bulkget;
 	}
 
 	/* allocate the space for the interface OIDs */

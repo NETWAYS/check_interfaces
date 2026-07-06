@@ -515,7 +515,7 @@ void create_pdu(int mode, char **oidlist, netsnmp_pdu **pdu, struct OIDStruct **
 				int nonrepeaters, long max) {
 
 	if (mode == NONBULK) {
-		*pdu = snmp_pdu_create(SNMP_MSG_GET);
+		*pdu = snmp_pdu_create(SNMP_MSG_GETNEXT);
 	}
 
 	else if (mode == BINTEC) {

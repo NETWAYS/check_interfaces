@@ -75,6 +75,9 @@ sudo make install   ## optional
      -r|--regex         interface list regexp
                             Regex to match interfaces (important, this is a Regular Expression
                             not a simple wildcard string, see below)
+     -R|--exclude-regex interface list negative regexp
+                        Interfaces matching this regex are excluded, even if they
+                        also match -r/--regex
      -e|--errors        number of in errors (CRC errors for cisco) to consider a warning (default 50)
                             Only warn if errors increase by more than this amount between checks
      -f|--out-errors    number of out errors (collisions for cisco) to consider a warning

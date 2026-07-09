@@ -733,6 +733,14 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 
 	unsigned int parsed_lastcheck = 0;
 
+	unsigned int printed_count = 0;
+
+	for (int i = 0; i < ifNumber; i++) {
+		if (!interfaces[i].ignore && (!interfaces[i].admin_down || config->print_all_flag)) {
+			printed_count++;
+		}
+	}
+
 	if (config->oldperfdatap && config->oldperfdatap[0]) {
 		parse_perfdata(config->oldperfdatap, oldperfdata, config->prefix, &parsed_lastcheck,
 					   ifNumber, if_vars);
@@ -957,12 +965,12 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 	/* now print performance data */
 	if (legacy_perfdata_flag) {
 		printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf", (int)out->len,
-			   out->text, number_of_matched_interfaces,
+			   out->text, printed_count,
 			   (((long double)time_value->tv_sec + ((long double)time_value->tv_usec / 1000000)) -
 				starttime));
 	} else {
 	printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf checktime=%ld", (int)out->len,
-		   out->text, number_of_matched_interfaces,
+		   out->text, printed_count,
 		   (((long double)time_value->tv_sec + ((long double)time_value->tv_usec / 1000000)) -
 			starttime),
 		   time_value->tv_sec);

@@ -103,7 +103,12 @@ sudo make install   ## optional
         --timeout       sets the SNMP timeout (in ms)
      -m|--mode          special operating mode (default,cisco,nonbulk,bintec)
                             Workarounds for various hardware
-
+     --legacy-perfdata  restore the pre-1.4.4 performance data format
+                        Omits checktime=, the ", of which X matched the regex" status
+                        text, and per-interface inBitps/outBitps fields, matching the
+                        exact output of versions before 1.4.4. Use this if you have
+                        existing RRD/PNP4Nagios graph definitions that expect the old
+                        field layout and would otherwise break on upgrade.
 
 ### Modes
 

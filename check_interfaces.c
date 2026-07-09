@@ -81,6 +81,8 @@ static char *oid_vals_cisco[] = {".1.3.6.1.2.1.2.2.1.7",      /* ifAdminStatus *
  */
 static const char *modes[] = {"default", "cisco", "nonbulk", "bintec", NULL};
 
+static bool legacy_perfdata_flag = false;
+
 #ifdef DEBUG
 static char *implode_result;
 #endif
@@ -953,12 +955,18 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 	}
 
 	/* now print performance data */
-
+	if (legacy_perfdata_flag) {
+		printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf", (int)out->len,
+			   out->text, number_of_matched_interfaces,
+			   (((long double)time_value->tv_sec + ((long double)time_value->tv_usec / 1000000)) -
+				starttime));
+	} else {
 	printf("%*s | interfaces::check_multi::plugins=%d time=%.2Lf checktime=%ld", (int)out->len,
 		   out->text, number_of_matched_interfaces,
 		   (((long double)time_value->tv_sec + ((long double)time_value->tv_usec / 1000000)) -
 			starttime),
 		   time_value->tv_sec);
+	}
 	if (uptime) {
 		printf(" %sdevice::check_snmp::uptime=%us", config->prefix ? config->prefix : "", uptime);
 	}
@@ -980,8 +988,10 @@ returncode_t print_output(struct configuration_struct *config, struct ifStruct *
 			} else {
 				printf(" %s=%llu", if_vars[8], interfaces[i].speed);
 			}
+			if (!legacy_perfdata_flag) {
 			printf(" %s=%llub %s=%llub", if_vars[9], interfaces[i].inbitps, if_vars[10],
 				   interfaces[i].outbitps);
+			}
 		}
 	}
 	printf("\n%*s", (int)perf.len, perf.text);
@@ -1289,6 +1299,7 @@ void parse_and_check_commandline(int argc, char **argv, struct configuration_str
 									   {"sleep", required_argument, NULL, 3},
 									   {"retries", required_argument, NULL, 4},
 									   {"max-repetitions", required_argument, NULL, 5},
+									   {"legacy-perfdata", no_argument, NULL, 6},
 									   {"version", no_argument, NULL, VERSION_OPTION},
 									   {NULL, 0, NULL, 0}};
 
@@ -1387,6 +1398,9 @@ void parse_and_check_commandline(int argc, char **argv, struct configuration_str
 			break;
 		case 5:
 			config->pdu_max_repetitions = strtol(optarg, NULL, 10);
+			break;
+		case 6:
+			legacy_perfdata_flag = true;
 			break;
 		case VERSION_OPTION:
 			print_version();
@@ -1512,6 +1526,8 @@ int usage(char *progname) {
 	printf("    --retries\t\thow often to retry before giving up\n");
 	printf("    --max-repetitions\t\tsee "
 		   "<http://www.net-snmp.org/docs/man/snmpbulkwalk.html>\n");
+	printf("    --legacy-perfdata\t\tuse the pre-1.4.4 perfdata format "
+		   "(no checktime=, no \", of which X matched\", no inBitps/outBitps)\n");
 	printf("    --port\t\tPort (default 161)\n");
 	printf("    --version\t\tPrint program version\n");
 	printf("\n");
